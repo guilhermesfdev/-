@@ -1,645 +1,2854 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Aventura da Vida 3D</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Press+Start+2P&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;background:#07040f;color:#f4ecf4;font-family:Nunito,system-ui,sans-serif;overflow:hidden;touch-action:none}
-#app{position:relative;width:100%;height:100%}
-canvas#c{display:block;width:100%;height:100%}
-#top{
-  position:absolute;top:0;left:0;right:0;z-index:10;pointer-events:none;
-  padding:12px 16px 28px;
-  background:linear-gradient(to bottom,rgba(7,4,15,.95),transparent);
-}
-#brand{font-family:'Press Start 2P',monospace;font-size:10px;color:#ff6b9d;letter-spacing:.06em}
-#phase{font-family:'Press Start 2P',monospace;font-size:11px;color:#ffe6c8;margin-top:8px;line-height:1.45}
-#row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
-#stats{display:flex;gap:14px;font-family:'Press Start 2P',monospace;font-size:9px;color:#b9a7c4;margin-top:4px}
-#stats b{color:#ff7eaa;font-weight:400}
-#hint{margin-top:10px;font-size:14px;line-height:1.4;color:#ddd0e8;max-width:900px}
-#barwrap{margin-top:10px;height:8px;background:#24182f;border-radius:99px;overflow:hidden;max-width:420px}
-#bar{height:100%;width:0%;background:linear-gradient(90deg,#1abc9c,#ff6b9d);transition:width .15s linear}
-#overlay{
-  position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
-  background:rgba(5,2,12,.82);padding:16px;
-}
-#overlay.hide{display:none}
-.card{
-  width:min(580px,100%);background:#140c1f;border:3px solid #ff6b9d;border-radius:18px;
-  padding:22px 20px 18px;box-shadow:0 0 50px rgba(255,107,157,.22);
-}
-.card h1{font-family:'Press Start 2P',monospace;font-size:15px;color:#ff6b9d;line-height:1.55;margin-bottom:8px}
-.card h2{font-family:'Press Start 2P',monospace;font-size:10px;color:#ffe6c8;line-height:1.5;margin-bottom:12px}
-.card p{font-size:15px;line-height:1.5;color:#ebe1f2;margin-bottom:10px}
-.sci{background:#1d1430;border-left:4px solid #1abc9c;padding:11px 12px;border-radius:0 12px 12px 0;margin:12px 0;color:#c7f6e7;font-size:14px;line-height:1.45}
-.btn{
-  display:block;width:100%;margin-top:14px;padding:14px 12px;border:0;border-radius:999px;
-  background:#ff6b9d;color:#2a0816;font-family:'Press Start 2P',monospace;font-size:11px;cursor:pointer;
-}
-.btn:hover{background:#ff9ec0}
-.btn:active{transform:scale(.98)}
-#pad{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
-.dpad{display:grid;grid-template-columns:54px 54px 54px;grid-template-rows:54px 54px 54px;gap:6px;pointer-events:auto}
-.dpad button,.act{
-  border:2px solid #3b2c4c;background:#1a1028;color:#ffe6c8;border-radius:12px;
-  font-family:'Press Start 2P',monospace;font-size:10px;touch-action:none;user-select:none;pointer-events:auto
-}
-.dpad button:active,.act:active{background:#ff6b9d;color:#2a0816}
-.act{width:78px;height:78px;border-radius:50%;border:3px solid #ffe6c8;background:#ff6b9d;color:#2a0816}
-.g{visibility:hidden}
-#toast{
-  position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:25;
-  font-family:'Press Start 2P',monospace;font-size:14px;color:#fff;text-shadow:0 0 12px #ff6b9d;
-  opacity:0;pointer-events:none;transition:opacity .2s;
-}
-#toast.show{opacity:1}
-@media(min-width:900px){#pad{opacity:.4}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Evolução do Corpo Humano - A Corrida da Vida</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      background: #050510;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #e8e8ff;
+      user-select: none;
+      touch-action: none;
+    }
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    #hud {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+      background: linear-gradient(to bottom, rgba(0,0,20,0.8), transparent);
+    }
+    .hud-left, .hud-right { display: flex; flex-direction: column; gap: 5px; }
+    .hud-item {
+      background: rgba(12, 12, 28, 0.92);
+      padding: 5px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(120, 150, 255, 0.28);
+      font-size: 13px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+    #phase-name { font-weight: 700; color: #93c5fd; font-size: 15px; letter-spacing: 0.3px; }
+    #health-bar-container {
+      width: 168px; height: 13px;
+      background: #12122a;
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    #health-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+      transition: width 0.22s ease-out;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+    }
+    #boost-bar-container {
+      width: 128px; height: 8px;
+      background: #12122a;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #333;
+      margin-top: 3px;
+    }
+    #boost-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #06b6d4, #22d3ee, #a5f3fc);
+      transition: width 0.12s;
+      box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(3, 3, 12, 0.96);
+      z-index: 100;
+      text-align: center;
+      padding: 16px;
+      transition: opacity 0.45s ease;
+      overflow-y: auto;
+    }
+    .screen.hidden { opacity: 0; pointer-events: none; }
+
+    h1 {
+      font-size: clamp(1.6rem, 4.5vw, 2.7rem);
+      background: linear-gradient(135deg, #7dd3fc, #c084fc, #f9a8d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    h2 { font-size: 1.35rem; color: #a5b4fc; margin-bottom: 12px; }
+    h3 { font-size: 1.1rem; color: #c4b5fd; margin: 10px 0 6px; }
+    p { max-width: 560px; line-height: 1.55; margin-bottom: 10px; color: #c7d2fe; font-size: 0.95rem; }
+
+    .btn {
+      margin-top: 14px;
+      padding: 13px 34px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white;
+      box-shadow: 0 4px 22px rgba(99, 102, 241, 0.5);
+      transition: transform 0.15s, box-shadow 0.15s;
+      pointer-events: auto;
+    }
+    .btn:hover { transform: scale(1.045); box-shadow: 0 6px 28px rgba(99, 102, 241, 0.7); }
+    .btn:active { transform: scale(0.97); }
+    .btn-secondary {
+      background: linear-gradient(135deg, #334155, #475569);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      margin-left: 10px;
+    }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+
+    .card {
+      background: rgba(22, 22, 48, 0.8);
+      border: 1px solid rgba(129, 140, 248, 0.28);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin: 8px 0;
+      max-width: 540px;
+      text-align: left;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .card ul { padding-left: 18px; }
+    .card li { margin: 5px 0; color: #d4d4f0; }
+
+    #message {
+      position: absolute;
+      top: 46%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(1.35rem, 4vw, 2.15rem);
+      font-weight: 700;
+      text-shadow: 0 0 28px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.8);
+      opacity: 0;
+      transition: opacity 0.28s;
+      z-index: 50;
+      pointer-events: none;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    #cutscene {
+      position: absolute;
+      inset: 0;
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: transparent;
+      pointer-events: none;
+    }
+    #cutscene.hidden { display: none; }
+    #cutscene-text {
+      background: linear-gradient(to top, rgba(4,4,16,0.97) 55%, transparent);
+      padding: 44px 24px 28px;
+      text-align: center;
+      pointer-events: auto;
+    }
+    #cutscene-title {
+      font-size: 1.45rem;
+      color: #f9a8d4;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    #cutscene-body {
+      font-size: 1rem;
+      color: #e0e7ff;
+      max-width: 620px;
+      margin: 0 auto 16px;
+      line-height: 1.65;
+    }
+    #cutscene-progress {
+      height: 3px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 2px;
+      max-width: 300px;
+      margin: 0 auto 12px;
+      overflow: hidden;
+    }
+    #cutscene-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #c084fc, #f9a8d4);
+      transition: width 0.08s linear;
+    }
+
+    /* Virtual Joystick */
+    #mobile-controls {
+      display: none;
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 200px;
+      z-index: 20;
+      pointer-events: none;
+    }
+    #joystick-zone {
+      position: absolute;
+      left: 20px; bottom: 24px;
+      width: 130px; height: 130px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    #joystick-base {
+      width: 130px; height: 130px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.22);
+      border: 2px solid rgba(165, 180, 252, 0.45);
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    #joystick-knob {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: rgba(129, 140, 248, 0.75);
+      border: 2px solid rgba(199, 210, 254, 0.8);
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      transition: background 0.1s;
+    }
+    #btn-boost {
+      position: absolute;
+      right: 28px; bottom: 36px;
+      width: 74px; height: 74px;
+      border-radius: 50%;
+      background: rgba(6, 182, 212, 0.4);
+      border: 2px solid rgba(165, 243, 252, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      pointer-events: auto;
+      touch-action: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      user-select: none;
+    }
+    #btn-boost:active, #btn-boost.active {
+      background: rgba(6, 182, 212, 0.7);
+      transform: scale(0.94);
+    }
+    #btn-pause-mobile {
+      position: absolute;
+      right: 28px; bottom: 130px;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: rgba(50, 50, 90, 0.55);
+      border: 2px solid rgba(165, 180, 252, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: white;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    @media (max-width: 768px) {
+      #mobile-controls { display: block; }
+      .card { font-size: 0.85rem; }
+      #hud { padding: 8px 10px; }
+      .hud-item { font-size: 11px; padding: 4px 8px; }
+      #health-bar-container { width: 120px; }
+    }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+    .tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(50,50,90,0.6);
+      border: 1px solid rgba(129,140,248,0.3);
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #c7d2fe;
+      pointer-events: auto;
+      transition: background 0.15s;
+    }
+    .tab.active { background: rgba(99,102,241,0.55); border-color: #818cf8; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .week-badge {
+      display: inline-block;
+      background: rgba(244,114,182,0.28);
+      color: #f9a8d4;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      margin-bottom: 6px;
+      border: 1px solid rgba(249,168,212,0.25);
+    }
+
+    #damage-flash {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(220,40,40,0.35) 100%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 15;
+      transition: opacity 0.15s;
+    }
+
+    .mode-selector { display: flex; gap: 10px; margin: 12px 0 4px; justify-content: center; flex-wrap: wrap; }
+    .mode-btn {
+      padding: 10px 20px; border-radius: 12px;
+      border: 2px solid rgba(129,140,248,0.4);
+      background: rgba(30,30,60,0.7); color: #c7d2fe;
+      cursor: pointer; font-size: 0.95rem; font-weight: 600;
+      transition: all 0.2s; pointer-events: auto;
+    }
+    .mode-btn:hover { border-color: #818cf8; background: rgba(50,50,100,0.8); }
+    .mode-btn.active {
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border-color: #c4b5fd; color: white;
+      box-shadow: 0 4px 18px rgba(99,102,241,0.5);
+    }
+    .mode-hint { font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px; }
+
+    /* Pause overlay */
+    #pause-screen {
+      position: absolute; inset: 0; z-index: 110;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      background: rgba(3, 3, 12, 0.92);
+      text-align: center; padding: 16px;
+    }
+    #pause-screen.hidden { display: none; }
+
+    /* Death / continue screen */
+    #death-screen {
+      position: absolute; inset: 0; z-index: 105;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      background: rgba(20, 5, 10, 0.94);
+      text-align: center; padding: 16px;
+    }
+    #death-screen.hidden { display: none; }
+
+    .save-badge {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+      padding: 4px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin: 6px 0;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+  </style>
 </head>
 <body>
-<div id="app">
-  <div id="top">
-    <div id="row">
-      <div>
-        <div id="brand">AVENTURA DA VIDA</div>
-        <div id="phase">…</div>
+  <div id="game-container">
+    <div id="hud" class="hidden">
+      <div class="hud-left">
+        <div class="hud-item" id="phase-name">Fase 1</div>
+        <div class="hud-item">
+          Vida
+          <div id="health-bar-container"><div id="health-bar"></div></div>
+          Boost
+          <div id="boost-bar-container"><div id="boost-bar"></div></div>
+        </div>
       </div>
-      <div id="stats">
-        <span>VIDAS <b id="lives">3</b></span>
-        <span>PONTOS <b id="score">0</b></span>
-        <span>RECORDE <b id="best">0</b></span>
+      <div class="hud-right">
+        <div class="hud-item" id="objective">Objetivo</div>
+        <div class="hud-item" id="timer">Tempo: 0s</div>
+        <div class="hud-item" id="extra-info"></div>
+        <div class="hud-item" id="score-info" style="display:none;">Score: 0</div>
       </div>
     </div>
-    <div id="hint"></div>
-    <div id="barwrap"><div id="bar"></div></div>
-  </div>
-  <canvas id="c"></canvas>
-  <div id="toast"></div>
-  <div id="overlay"><div class="card" id="card"></div></div>
-  <div id="pad">
-    <div class="dpad">
-      <span class="g"></span><button type="button" data-k="up">▲</button><span class="g"></span>
-      <button type="button" data-k="left">◀</button>
-      <button type="button" data-k="down">▼</button>
-      <button type="button" data-k="right">▶</button>
+
+    <div id="damage-flash"></div>
+    <div id="message"></div>
+
+    <div id="cutscene" class="hidden">
+      <div id="cutscene-text">
+        <div id="cutscene-title"></div>
+        <div id="cutscene-body"></div>
+        <div id="cutscene-progress"><div id="cutscene-bar"></div></div>
+        <button class="btn" id="btn-skip-cutscene" style="margin-top:8px;padding:8px 20px;font-size:0.9rem;">Pular ▶</button>
+      </div>
     </div>
-    <button type="button" class="act" data-k="act">A</button>
+
+    <!-- Virtual Joystick + Boost -->
+    <div id="mobile-controls">
+      <div id="joystick-zone">
+        <div id="joystick-base">
+          <div id="joystick-knob"></div>
+        </div>
+      </div>
+      <div id="btn-boost">⚡</div>
+      <div id="btn-pause-mobile">⏸</div>
+    </div>
+
+    <!-- Pause -->
+    <div id="pause-screen" class="hidden">
+      <h2>⏸ Pausado</h2>
+      <p>Pressione ESC ou o botão para continuar</p>
+      <div class="btn-row">
+        <button class="btn" id="btn-resume">CONTINUAR</button>
+        <button class="btn btn-secondary" id="btn-quit-menu">MENU</button>
+      </div>
+    </div>
+
+    <!-- Death / Continue -->
+    <div id="death-screen" class="hidden">
+      <h2>💔 Fase perdida</h2>
+      <p id="death-message">Sua vida chegou a zero.</p>
+      <div class="btn-row">
+        <button class="btn" id="btn-retry">TENTAR DE NOVO</button>
+        <button class="btn btn-secondary" id="btn-death-menu">MENU</button>
+      </div>
+    </div>
+
+    <div id="start-screen" class="screen">
+      <h1>🧬 Evolução do Corpo Humano</h1>
+      <h2>A Corrida da Vida</h2>
+      <p>Escolha o modo visual e comece (ou continue) a jornada. O tutorial já explicou as regras — boas-vindas de volta!</p>
+      <div class="mode-selector">
+        <button class="mode-btn active" data-mode="realistic">🎬 Realista</button>
+        <button class="mode-btn" data-mode="8bit">👾 8-bit</button>
+      </div>
+      <p class="mode-hint" id="mode-hint">Modo Realista: modelos detalhados e animações cinematográficas</p>
+
+      <div id="continue-area" class="hidden" style="margin: 8px 0;">
+        <div class="save-badge" id="save-info">Progresso salvo disponível</div>
+        <button class="btn" id="btn-continue" style="margin-top:6px;">▶ CONTINUAR</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="regras">📜 Regras</div>
+        <div class="tab" data-tab="controles">🎮 Controles</div>
+        <div class="tab" data-tab="fases">🗺️ Fases</div>
+        <div class="tab" data-tab="gestacao">🤰 Gestação</div>
+      </div>
+
+      <div id="tab-regras" class="tab-content active card">
+        <h3>Regras do Jogo</h3>
+        <ul>
+          <li>Complete as <strong>6 fases</strong> em sequência. Cada uma tem mecânica e visual únicos.</li>
+          <li>Você tem uma barra de <strong>Vida</strong>. Se chegar a 0, pode tentar de novo na mesma fase.</li>
+          <li>Use o <strong>Boost</strong> (energia limitada) para acelerar em momentos críticos.</li>
+          <li>Entre as fases há <strong>cutscenes educativas</strong> sobre a gestação.</li>
+          <li>Seu progresso é <strong>salvo automaticamente</strong> ao completar cada fase.</li>
+          <li>Objetivo final: sobreviver ao <strong>Nascimento</strong> (chefe final).</li>
+        </ul>
+      </div>
+
+      <div id="tab-controles" class="tab-content card">
+        <h3>Controles</h3>
+        <ul>
+          <li><strong>WASD</strong> ou <strong>Setas</strong> → Mover</li>
+          <li><strong>Espaço</strong> → Boost (acelera e gasta energia)</li>
+          <li><strong>Q / E</strong> → Subir / Descer (fases abertas)</li>
+          <li><strong>ESC</strong> ou <strong>P</strong> → Pausar</li>
+          <li>No celular: <strong>joystick virtual</strong> + botão de boost</li>
+        </ul>
+        <p style="margin-top:8px;font-size:0.85rem;opacity:0.85;">Dica: em túneis o movimento para frente é automático; use A/D para desviar.</p>
+      </div>
+
+      <div id="tab-fases" class="tab-content card">
+        <h3>As 6 Fases</h3>
+        <ul>
+          <li><strong>1. Espermatozoides</strong> — Corrida: só UM fertiliza o óvulo</li>
+          <li><strong>2. Digestório</strong> — Colete nutrientes → zona de absorção abre</li>
+          <li><strong>3. Respiratório</strong> — Entregue O₂ no alvéolo</li>
+          <li><strong>4. Excretor</strong> — Filtre toxinas → portal abre</li>
+          <li><strong>5. Endócrino</strong> — Entregue hormônios nas glândulas certas</li>
+          <li><strong>6. Nascimento (BOSS)</strong> — Sincronize com as contrações e nasça</li>
+        </ul>
+      </div>
+
+      <div id="tab-gestacao" class="tab-content card">
+        <h3>O que você vai aprender</h3>
+        <ul>
+          <li>Fertilização e formação do zigoto</li>
+          <li>Implantação e embrião (semanas 1–8)</li>
+          <li>Formação dos sistemas digestório, respiratório, excretor e endócrino</li>
+          <li>Desenvolvimento fetal e o momento do nascimento</li>
+        </ul>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="btn-start">COMEÇAR A JORNADA</button>
+      </div>
+      <p style="margin-top:14px;font-size:0.85rem;">
+        <a href="tutorial.html" style="color:#818cf8;text-decoration:none;">📖 Revisar tutorial</a>
+        &nbsp;·&nbsp;
+        <a href="index.html" style="color:#64748b;text-decoration:none;">Início</a>
+      </p>
+    </div>
+
+    <div id="level-screen" class="screen hidden">
+      <div class="week-badge" id="level-week"></div>
+      <h2 id="level-title">Fase</h2>
+      <p id="level-desc"></p>
+      <div class="card" id="level-tips"></div>
+      <button class="btn" id="btn-play-level">JOGAR FASE</button>
+    </div>
+
+    <div id="end-screen" class="screen hidden">
+      <h1 id="end-title">Fim</h1>
+      <p id="end-message"></p>
+      <p id="end-score" style="color:#fbbf24;font-size:1.1rem;margin:8px 0;"></p>
+      <button class="btn" id="btn-restart">JOGAR NOVAMENTE</button>
+    </div>
   </div>
-</div>
 
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
-<script type="module">
-import * as THREE from 'three';
-
-const KEY='vida3d-v2';
-const held=new Set();
-const pad={u:0,d:0,l:0,r:0,a:0};
-let edgeA=false, wasA=false, lockUI=false;
-
-const el={
-  phase:document.getElementById('phase'),
-  hint:document.getElementById('hint'),
-  lives:document.getElementById('lives'),
-  score:document.getElementById('score'),
-  best:document.getElementById('best'),
-  bar:document.getElementById('bar'),
-  overlay:document.getElementById('overlay'),
-  card:document.getElementById('card'),
-  toast:document.getElementById('toast'),
-};
-
-const S={
-  mode:'title', // title story play growth win dead
-  phase:0, lives:3, score:0,
-  best:Number(localStorage.getItem(KEY)||0)||0,
-  prog:0, goal:1, inv:0, t:0, toastT:0,
-};
-
-const PHASE=[
-  {id:'swim',name:'Corrida até o óvulo',who:'Espermatozoide',
-   hint:'Nade até o óvulo rosa. Corrente empurra para frente. Desvie dos coágulos.'},
-  {id:'digest',name:'Sistema digestório',who:'Nutriente',
-   hint:'Labirinto do intestino. Chegue na saída creme. Evite ácido verde.'},
-  {id:'breathe',name:'Sistema respiratório',who:'Portador de O₂',
-   hint:'Colete 8 oxigênios azuis. A/Espaço dá impulso. Não caia no vazio.'},
-  {id:'filter',name:'Sistema excretor',who:'Célula filtradora',
-   hint:'Empurre 7 toxinas vermelhas até a faixa verde à esquerda.'},
-  {id:'hormone',name:'Sistema endócrino',who:'Mensageiro',
-   hint:'Pegue 6 hormônios verdes. Laranjas tiram vida. Mova-se sem parar.'},
-  {id:'birth',name:'Nascimento',who:'Bebê',
-   hint:'Suba o canal. Contrações vêm em ondas. Desvie para os lados.'},
-];
-
-const STORY=[
-  {t:'Capítulo 0 — Fecundação',
-   b:'Milhões competem. Apenas um espermatozoide fertiliza o óvulo e inicia a vida.',
-   s:'Ciência: a união dos núcleos forma o zigoto com 46 cromossomos e o plano genético completo.',
-   btn:'Começar corrida'},
-  {t:'Capítulo 1 — Digestório',
-   b:'O tubo digestivo se forma cedo. Depois, ele transformará comida em combustível celular.',
-   s:'Ciência: enzimas e vilosidades intestinais multiplicam a absorção de nutrientes.',
-   btn:'Entrar no intestino'},
-  {t:'Capítulo 2 — Respiratório',
-   b:'Sem oxigênio as células não produzem energia suficiente. Os pulmões farão essa troca.',
-   s:'Ciência: nos alvéolos, O₂ entra no sangue e CO₂ sai. A hemoglobina carrega o oxigênio.',
-   btn:'Coletar O₂'},
-  {t:'Capítulo 3 — Excretor',
-   b:'Resíduos no sangue precisam ser filtrados. Os rins mantêm o equilíbrio interno.',
-   s:'Ciência: cada rim tem cerca de 1 milhão de néfrons filtrando continuamente o plasma.',
-   btn:'Filtrar toxinas'},
-  {t:'Capítulo 4 — Endócrino',
-   b:'Hormônios são mensagens químicas. O equilíbrio entre elas regula crescimento e humor metabólico.',
-   s:'Ciência: hipófise, tireoide e adrenais liberam sinais na corrente sanguínea.',
-   btn:'Equilibrar sinais'},
-  {t:'Capítulo 5 — Nascimento',
-   b:'Após meses de construção, o bebê deixa o útero e respira pela primeira vez.',
-   s:'Ciência: oxitocina estimula contrações; ao nascer a circulação e os pulmões mudam de função.',
-   btn:'Nascer'},
-];
-
-const GROW=[
-  'Zigoto — uma célula, todo o DNA',
-  'Mórula / blastocisto — divisão rápida',
-  'Embrião — órgãos em esboço',
-  'Feto — sistemas em maturação',
-  'Feto avançado — quase pronto',
-  'A termo — pronto para nascer',
-];
-
-/* ----- three ----- */
-const canvas=document.getElementById('c');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setClearColor(0x07040f,1);
-const scene=new THREE.Scene();
-scene.fog=new THREE.Fog(0x07040f,14,48);
-const camera=new THREE.PerspectiveCamera(55,1,.1,100);
-scene.add(new THREE.HemisphereLight(0xffd0e0,0x121828,1.15));
-const sun=new THREE.DirectionalLight(0xffffff,.9);
-sun.position.set(5,14,8); scene.add(sun);
-const world=new THREE.Group(); scene.add(world);
-
-let player=null, ents=[], particles=[];
-
-function mat(c,e=0x000000,ei=.2){
-  return new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:ei,roughness:.5,metalness:.06});
-}
-function clearWorld(){
-  while(world.children.length){
-    const o=world.children[0]; world.remove(o);
-    o.traverse?.(x=>{x.geometry?.dispose?.(); if(x.material){Array.isArray(x.material)?x.material.forEach(m=>m.dispose?.()):x.material.dispose?.()}});
-  }
-  ents=[]; particles=[]; player=null;
-}
-function floor(c,w=28,d=18){
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat(c,c,.04));
-  m.rotation.x=-Math.PI/2; world.add(m);
-  // grid lines subtle
-  const g=new THREE.GridHelper(Math.min(w,d),12,0xffffff,0xffffff);
-  g.material.opacity=.06; g.material.transparent=true; g.position.y=.01; world.add(g);
-}
-function addPlayer(color,kind='ball'){
-  let mesh;
-  if(kind==='sperm'){
-    mesh=new THREE.Group();
-    mesh.add(new THREE.Mesh(new THREE.SphereGeometry(.38,14,14),mat(0xffffff,0xffffff,.25)));
-    const tail=new THREE.Mesh(new THREE.CapsuleGeometry(.05,.95,4,8),mat(0xddddff));
-    tail.rotation.z=Math.PI/2; tail.position.x=-.75; mesh.add(tail); mesh.userData.tail=tail;
-  } else if(kind==='baby'){
-    mesh=new THREE.Group();
-    mesh.add(new THREE.Mesh(new THREE.SphereGeometry(.48,14,14),mat(0xffb6c8,0xff6b9d,.22)));
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.34,14,14),mat(0xffd2de));
-    head.position.y=.58; mesh.add(head);
-  } else {
-    mesh=new THREE.Mesh(new THREE.SphereGeometry(.42,16,16),mat(color,color,.28));
-  }
-  mesh.position.set(0,.55,0); world.add(mesh);
-  player={mesh,x:0,y:.55,z:0,vx:0,vy:0,vz:0,r:.45,on:true};
-  return player;
-}
-function ball(x,y,z,r,c,kind,vx=0,vz=0){
-  const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,12,12),mat(c,c,.35));
-  mesh.position.set(x,y,z); world.add(mesh);
-  const e={mesh,kind,x,y,z,vx,vz,r,taken:false,sx:0,sz:0};
-  ents.push(e); return e;
-}
-function box(x,y,z,sx,sy,sz,c,kind='wall'){
-  const mesh=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat(c));
-  mesh.position.set(x,y,z); world.add(mesh);
-  ents.push({mesh,kind,x,y,z,vx:0,vz:0,r:Math.max(sx,sz)/2,sx,sy,sz,taken:false});
-}
-function burst(x,y,z,c,n=10){
-  for(let i=0;i<n;i++){
-    const m=new THREE.Mesh(new THREE.SphereGeometry(.08,6,6),mat(c,c,.6));
-    m.position.set(x,y,z); world.add(m);
-    particles.push({m,vx:(Math.random()-.5)*6,vy:Math.random()*5,vz:(Math.random()-.5)*6,life:.5+Math.random()*.4});
-  }
-}
-function resize(){
-  const w=canvas.clientWidth||innerWidth, h=canvas.clientHeight||innerHeight;
-  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
-}
-addEventListener('resize',resize); resize();
-
-/* input */
-addEventListener('keydown',e=>{
-  const k=e.key.toLowerCase();
-  if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','enter'].includes(k)) e.preventDefault();
-  held.add(k);
-});
-addEventListener('keyup',e=>held.delete(e.key.toLowerCase()));
-document.querySelectorAll('[data-k]').forEach(b=>{
-  const k=b.getAttribute('data-k');
-  const set=v=>{
-    if(k==='up')pad.u=v; if(k==='down')pad.d=v; if(k==='left')pad.l=v; if(k==='right')pad.r=v;
-    if(k==='act'){pad.a=v; if(v) edgeA=true;}
-  };
-  const on=e=>{e.preventDefault(); set(1)};
-  const off=e=>{e.preventDefault(); set(0)};
-  b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off);
-  b.addEventListener('pointerleave',off); b.addEventListener('pointercancel',off);
-});
-function input(){
-  const l=held.has('arrowleft')||held.has('a')||!!pad.l;
-  const r=held.has('arrowright')||held.has('d')||!!pad.r;
-  const u=held.has('arrowup')||held.has('w')||!!pad.u;
-  const d=held.has('arrowdown')||held.has('s')||!!pad.d;
-  const a=held.has(' ')||held.has('enter')||!!pad.a;
-  const edge=(a&&!wasA)||edgeA;
-  wasA=a; edgeA=false;
-  return {l,r,u,d,a,edge};
-}
-
-/* UI */
-function hud(){
-  el.lives.textContent=String(S.lives);
-  el.score.textContent=String(S.score);
-  el.best.textContent=String(S.best);
-  const p=PHASE[S.phase];
-  if(S.mode==='play'){
-    el.phase.textContent=p.name+' · '+p.who;
-    el.hint.textContent=p.hint;
-    el.bar.style.width=(Math.min(1,S.prog/S.goal)*100)+'%';
-  } else {
-    el.bar.style.width='0%';
-  }
-}
-function toast(msg){
-  el.toast.textContent=msg; el.toast.classList.add('show'); S.toastT=.9;
-}
-function panel(o){
-  lockUI=true;
-  el.overlay.classList.remove('hide');
-  el.card.innerHTML='';
-  const h1=document.createElement('h1'); h1.textContent=o.title; el.card.appendChild(h1);
-  if(o.sub){const h2=document.createElement('h2'); h2.textContent=o.sub; el.card.appendChild(h2);}
-  if(o.body){const p=document.createElement('p'); p.textContent=o.body; el.card.appendChild(p);}
-  if(o.sci){const s=document.createElement('div'); s.className='sci'; s.textContent=o.sci; el.card.appendChild(s);}
-  const b=document.createElement('button'); b.type='button'; b.className='btn'; b.textContent=o.btn||'Continuar';
-  b.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation(); lockUI=false; o.go&&o.go();});
-  el.card.appendChild(b);
-  // prevent accidental double space from previous frame
-  wasA=true; edgeA=false; held.delete(' '); held.delete('enter'); pad.a=0;
-}
-function hidePanel(){el.overlay.classList.add('hide'); lockUI=false;}
-
-function title(){
-  S.mode='title'; clearWorld(); floor(0x140c1f,18,12);
-  camera.position.set(0,7,12); camera.lookAt(0,1,0);
-  panel({
-    title:'Aventura da Vida',
-    sub:'Jornada 3D educativa',
-    body:'Setas ou WASD movem. Espaço / botão A age. No celular use o painel inferior. 3 vidas. Recorde salvo neste aparelho.',
-    sci:'Fases: corrida → digestório → respiratório → excretor → endócrino → nascimento. Entre elas há história e fatos científicos.',
-    btn:'Começar',
-    go:()=>{S.lives=3;S.score=0;S.phase=0; story(0);}
-  });
-  el.phase.textContent='Tela inicial';
-  el.hint.textContent='Pressione Começar.';
-  hud();
-}
-function story(i){
-  S.mode='story'; S.phase=i; clearWorld(); floor(0x1a1028,16,12);
-  camera.position.set(0,6,11); camera.lookAt(0,1,0);
-  const s=STORY[i];
-  panel({title:s.t, body:s.b, sci:s.s, btn:s.btn, go:()=>{hidePanel(); start(i);}});
-  el.phase.textContent=s.t; el.hint.textContent='Leia e continue.'; hud();
-}
-function growth(){
-  S.mode='growth'; clearWorld(); floor(0x201030,14,10);
-  const b=addPlayer(0xffb6c8,'baby');
-  b.mesh.scale.setScalar(.7+S.phase*.22);
-  camera.position.set(0,4,8); camera.lookAt(0,1,0);
-  panel({
-    title:'O bebê cresce',
-    sub:GROW[Math.min(S.phase,GROW.length-1)],
-    body:'Cada sistema concluído organiza um pouco mais o organismo em formação.',
-    sci:'Ciência: divisão celular, diferenciação e maturação de órgãos acontecem em sequência ao longo das semanas.',
-    btn:'Próxima etapa',
-    go:()=>{
-      hidePanel();
-      const n=S.phase+1;
-      if(n>=PHASE.length) win(); else story(n);
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
     }
-  });
-  el.phase.textContent='Crescimento'; hud();
-}
-function win(){
-  S.mode='win'; S.best=Math.max(S.best,S.score);
-  try{localStorage.setItem(KEY,String(S.best))}catch(e){}
-  clearWorld(); floor(0x241018,14,10); addPlayer(0xffb6c8,'baby');
-  camera.position.set(0,5,9); camera.lookAt(0,1,0);
-  panel({
-    title:'Nasceu!',
-    sub:'Pontos '+S.score+' · Recorde '+S.best,
-    body:'Você completou a jornada: da fecundação ao nascimento, passando pelos quatro sistemas.',
-    sci:'Ciência: no nascimento os pulmões expandem e a circulação deixa de depender da placenta.',
-    btn:'Jogar de novo', go:()=>title()
-  });
-  el.phase.textContent='Vitória'; hud();
-}
-function dead(){
-  S.mode='dead';
-  panel({
-    title:'Fim de jogo',
-    body:'As 3 vidas acabaram. Tente outra vez com mais cuidado nas fases difíceis.',
-    btn:'Voltar ao início', go:()=>title()
-  });
-}
-function hurt(){
-  if(S.inv>0||S.mode!=='play') return;
-  S.lives--; S.inv=1.15; toast('Ai!');
-  burst(player.x,player.y,player.z,0xff6b9d,12);
-  if(S.lives<=0){dead(); return;}
-  // safe respawn
-  const id=PHASE[S.phase].id;
-  if(id==='birth'){player.x=0; player.z=10;}
-  else if(id==='filter'){player.x=-1; player.z=0;}
-  else {player.x=-8; player.z=0;}
-  player.vx=player.vz=player.vy=0;
-  player.mesh.position.set(player.x,player.y,player.z);
-  hud();
-}
-function done(){
-  S.score+=500; S.best=Math.max(S.best,S.score);
-  try{localStorage.setItem(KEY,String(S.best))}catch(e){}
-  toast('+500');
-  burst(player?.x||0,1,player?.z||0,0xffe6c8,16);
-  if(S.phase>=PHASE.length-1) win(); else growth();
-  hud();
-}
-
-/* levels */
-function start(i){
-  S.mode='play'; S.phase=i; S.prog=0; S.inv=0; clearWorld();
-  const id=PHASE[i].id;
-
-  if(id==='swim'){
-    S.goal=1; floor(0x2a1528,34,16);
-    box(0,1,-7.6,34,2,.5,0x3d2040,'wall'); box(0,1,7.6,34,2,.5,0x3d2040,'wall');
-    addPlayer(0xffffff,'sperm'); player.x=-12; player.mesh.position.x=-12;
-    ball(12,.9,0,1.15,0xff6b9d,'goal');
-    // drifting clots
-    for(let i=0;i<10;i++){
-      ball(-8+i*2,.5,((i%3)-1)*2.8,.5,0xc44b6a,'bad',0,(i%2?1:-1)*(1.8+i*.08));
-    }
-    // gentle gates
-    for(let i=0;i<4;i++) box(-4+i*4,.7,(i%2?3.2:-3.2),1.2,1.4,2.4,0x5a3048,'wall');
-    camera.position.set(-2,11,15); camera.lookAt(0,0,0);
   }
+  </script>
 
-  if(id==='digest'){
-    S.goal=1; floor(0x24150c,30,16);
-    addPlayer(0xf1c40f); player.x=-12; player.z=-5; player.mesh.position.set(-12,.55,-5);
-    // maze corridors
-    const W=[
-      [-6,-3,1.4,8],[ -2,3,1.4,8],[2,-3,1.4,8],[6,3,1.4,8],[10,-2,1.4,7],
-      [-9,4,7,1.3],[1,-5,9,1.3],[5,5,8,1.3],[-3,-1,4,1.3]
+  <script type="module">
+    import * as THREE from 'three';
+
+    // ============================================================
+    // CONFIG & BALANCE
+    // ============================================================
+    const CONFIG = {
+      isMobile: /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768,
+      maxParticles: 40,
+      saveKey: 'evolucao_corpo_save_v2',
+      // Balanceamento (mais justo)
+      damage: {
+        wbc: 7,
+        acid: 6,
+        enzyme: 10,
+        pollution: 6,
+        mucus: 3,
+        protein: 12,
+        wrongHormone: 8,
+        npcSperm: 2,
+        wall: 6,
+        contraction: 5,
+        wrongGland: 7,
+      },
+      minNutrients: 4,
+      minToxins: 6,
+      damageCooldown: 0.85,
+      boostCost: 22,
+      boostRegen: 10,
+      passiveDamageStart: 140,
+      passiveDamageRate: 1.2,
+    };
+
+    // ============================================================
+    // AUDIO SYSTEM (Web Audio API — procedural, sem assets externos)
+    // ============================================================
+    const AudioSys = {
+      ctx: null,
+      enabled: true,
+      masterGain: null,
+
+      init() {
+        try {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.value = 0.35;
+          this.masterGain.connect(this.ctx.destination);
+        } catch (e) {
+          this.enabled = false;
+        }
+      },
+
+      resume() {
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
+
+      _tone(freq, type, duration, vol = 0.3, slideTo = null) {
+        if (!this.enabled || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        if (slideTo) osc.frequency.linearRampToValueAtTime(slideTo, t + duration);
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(t);
+        osc.stop(t + duration + 0.05);
+      },
+
+      hit() { this._tone(180, 'square', 0.12, 0.22, 80); },
+      collect() { this._tone(520, 'sine', 0.15, 0.25, 780); },
+      boost() { this._tone(220, 'sawtooth', 0.08, 0.12, 340); },
+      heal() { this._tone(400, 'sine', 0.2, 0.2, 600); },
+      win() {
+        this._tone(440, 'sine', 0.2, 0.25);
+        setTimeout(() => this._tone(554, 'sine', 0.2, 0.25), 120);
+        setTimeout(() => this._tone(659, 'sine', 0.35, 0.28), 240);
+      },
+      lose() { this._tone(300, 'sawtooth', 0.4, 0.25, 80); },
+      deliver() { this._tone(600, 'triangle', 0.25, 0.28, 900); },
+      unlock() {
+        this._tone(350, 'sine', 0.15, 0.2);
+        setTimeout(() => this._tone(500, 'sine', 0.2, 0.22), 100);
+      },
+      click() { this._tone(800, 'sine', 0.05, 0.1); },
+    };
+
+    // ============================================================
+    // PARTICLE POOL (performance)
+    // ============================================================
+    const ParticlePool = {
+      pool: [],
+      active: [],
+
+      acquire(scene) {
+        let p = this.pool.pop();
+        if (!p) {
+          p = new THREE.Mesh(
+            new THREE.SphereGeometry(0.07, 5, 5),
+            new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.8 })
+          );
+        }
+        p.visible = true;
+        scene.add(p);
+        this.active.push(p);
+        return p;
+      },
+
+      release(p, scene) {
+        p.visible = false;
+        scene.remove(p);
+        const idx = this.active.indexOf(p);
+        if (idx >= 0) this.active.splice(idx, 1);
+        if (this.pool.length < CONFIG.maxParticles) this.pool.push(p);
+      },
+
+      update(delta, scene) {
+        for (let i = this.active.length - 1; i >= 0; i--) {
+          const p = this.active[i];
+          p.userData.life -= delta;
+          p.position.addScaledVector(p.userData.vel, delta);
+          p.userData.vel.multiplyScalar(0.96);
+          if (p.material) p.material.opacity = Math.max(0, p.userData.life * 1.8);
+          p.scale.setScalar(Math.max(0.1, p.userData.life * 2.2));
+          if (p.userData.life <= 0) this.release(p, scene);
+        }
+      },
+
+      clear(scene) {
+        while (this.active.length) this.release(this.active[0], scene);
+      },
+    };
+
+    // ============================================================
+    // GAME STATE
+    // ============================================================
+    const state = {
+      phase: 0,
+      health: 100,
+      time: 0,
+      score: 0,
+      isPlaying: false,
+      isPaused: false,
+      inCutscene: false,
+      keys: {},
+      joy: { x: 0, y: 0, active: false },
+      mobileBoost: false,
+      player: null,
+      camera: null,
+      scene: null,
+      renderer: null,
+      clock: new THREE.Clock(),
+      obstacles: [],
+      collectibles: [],
+      goal: null,
+      levelComplete: false,
+      damageCooldown: 0,
+      boostEnergy: 100,
+      glands: [],
+      hormonesCarried: null,
+      glandsDelivered: 0,
+      toxinsCollected: 0,
+      nutrientsCollected: 0,
+      goalUnlocked: false,
+      contractions: [],
+      cutsceneData: null,
+      cutsceneTimer: 0,
+      cutsceneDuration: 0,
+      animObjects: [],
+      tailSegments: [],
+      boostTrailTimer: 0,
+      npcSperms: [],
+      carriedMesh: null,
+      wrongGlandCooldown: 0,
+      graphicsMode: 'realistic',
+      playerRadius: 0.5,
+    };
+
+    // ============================================================
+    // PHASE DATA (balanceado)
+    // ============================================================
+    const PHASES = [
+      null,
+      {
+        id: 1,
+        name: "Corrida dos Espermatozoides",
+        week: "Dia 0 — Fertilização",
+        desc: "Centenas de milhões competem. Só UM penetará o óvulo. Rivalize com outros espermatozoides e seja o primeiro a fertilizar.",
+        tips: "• Movimento para frente é automático\n• A/D ou joystick para desviar\n• Espaço / ⚡ = Boost\n• Só VOCÊ pode entrar no óvulo\n• Evite glóbulos brancos e ácido",
+        color: 0xff88aa,
+        difficulty: "Médio",
+        objective: "Seja o único a fertilizar o óvulo"
+      },
+      {
+        id: 2,
+        name: "Sistema Digestório",
+        week: "Semanas 4–5 — Tubo digestivo se forma",
+        desc: "O tubo digestivo primitivo precisa de nutrientes. Colete nutrientes essenciais e só então a zona de absorção se abre.",
+        tips: `• Colete ${CONFIG.minNutrients} nutrientes verdes\n• Evite ácido e enzimas\n• Nutrientes também curam\n• Zona dourada só ativa após coletar`,
+        color: 0xf59e0b,
+        difficulty: "Médio-Difícil",
+        objective: `Colete ${CONFIG.minNutrients} nutrientes e seja absorvido`
+      },
+      {
+        id: 3,
+        name: "Sistema Respiratório",
+        week: "Semanas 6–16 — Pulmões se desenvolvem",
+        desc: "Os brotos pulmonares se ramificam. Entregue oxigênio no alvéolo, desviando de poluição e muco.",
+        tips: "• Fluxo de ar empurra para frente\n• Poluição causa dano\n• Muco deixa lento — contorne\n• Alvéolo dourado = entrega de O₂",
+        color: 0x38bdf8,
+        difficulty: "Médio",
+        objective: "Entregue O₂ no alvéolo"
+      },
+      {
+        id: 4,
+        name: "Sistema Excretor",
+        week: "Semanas 5–12 — Rins e filtragem",
+        desc: "Os rins fetais filtram o sangue. Remova toxinas sem deixar passar proteínas vitais; depois saia pelo portal.",
+        tips: `• Colete ≥${CONFIG.minToxins} toxinas vermelhas\n• Proteínas azuis = dano\n• Portal só abre com toxinas suficientes\n• WASD / joystick livre na arena`,
+        color: 0xa78bfa,
+        difficulty: "Médio-Difícil",
+        objective: `Filtre ${CONFIG.minToxins} toxinas e saia pelo portal`
+      },
+      {
+        id: 5,
+        name: "Sistema Endócrino",
+        week: "Semanas 8–20 — Glândulas e hormônios",
+        desc: "As glândulas se organizam. Carregue UM hormônio por vez e entregue na glândula da mesma cor.",
+        tips: "• Pegue 1 hormônio (octaedro colorido)\n• Leve à glândula da MESMA cor\n• Só carrega um por vez\n• Cor errada = perde o hormônio\n• Entregue os 4 tipos",
+        color: 0xf472b6,
+        difficulty: "Desafiador",
+        objective: "Entregue 4 hormônios corretos"
+      },
+      {
+        id: 6,
+        name: "O Nascimento",
+        week: "Semana 40 — Trabalho de parto",
+        desc: "As contrações começaram. Guie o bebê pelo canal: avance quando a passagem abrir e nasça!",
+        tips: "• Canal estreito + contrações rítmicas\n• Boost quando as paredes abrirem\n• Toque nas paredes = dano\n• Chegue à luz no final",
+        color: 0xfbbf24,
+        difficulty: "BOSS FINAL",
+        objective: "Nasça!"
+      }
     ];
-    W.forEach(([x,z,sx,sz])=>box(x,.85,z,sx,1.7,sz,0x8a5a32,'wall'));
-    ball(-3,.5,4,.48,0x7dff6b,'bad',0,2.4);
-    ball(4,.5,-2,.48,0x7dff6b,'bad',2.1,0);
-    ball(8,.5,2,.48,0x7dff6b,'bad',0,-2.2);
-    ball(12.5,.65,0,.7,0xffe6c8,'goal');
-    camera.position.set(0,15,13); camera.lookAt(0,0,0);
-  }
 
-  if(id==='breathe'){
-    S.goal=8; floor(0x0b1830,26,18);
-    // platforms as raised boxes
-    const plats=[[-8,0,3.5],[-4,3,3],[-4,-3.5,3],[0,0,3.2],[3,3.5,3],[3,-3,3],[7,1,3],[10,-2,3]];
-    plats.forEach(([x,z,s])=>{
-      box(x,.25,z,s,.5,s,0x2a6aaa,'plat');
-    });
-    addPlayer(0x7ec8ff); player.x=-8; player.z=0; player.y=1; player.mesh.position.set(-8,1,0);
-    const o2=[[-4,3],[-4,-3.5],[0,0],[3,3.5],[3,-3],[7,1],[10,-2],[10,2.5]];
-    o2.forEach(([x,z])=>ball(x,1.4,z,.32,0x4aa3ff,'o2'));
-    camera.position.set(0,13,15); camera.lookAt(0,0,0);
-  }
+    const CUTSCENES = [
+      null,
+      {
+        title: "✨ Fertilização Concluída",
+        body: "O espermatozoide penetrou o óvulo. Forma-se o zigoto — a primeira célula de um novo ser humano. Nas próximas horas ele se divide: 2, 4, 8 células... até se tornar um blastocisto que viaja até o útero.",
+        duration: 9,
+        anim: "fertilization"
+      },
+      {
+        title: "🌱 Implantação e Embrião",
+        body: "Por volta do dia 6–10 o blastocisto se implanta no endométrio. Começa a gastrulação: formam-se as três camadas germinativas (ectoderma, mesoderma, endoderma). O tubo digestivo primitivo já está presente.",
+        duration: 10,
+        anim: "implantation"
+      },
+      {
+        title: "💨 Os Pulmões em Formação",
+        body: "Entre as semanas 6 e 16 os brotos pulmonares se ramificam. Ainda não há respiração aérea — o feto “treina” movimentos respiratórios com líquido amniótico. Os alvéolos só amadurecem bem mais tarde.",
+        duration: 9,
+        anim: "lungs"
+      },
+      {
+        title: "💧 Rins e Equilíbrio",
+        body: "Os rins fetais começam a funcionar por volta da semana 8–10. Produzem urina que contribui para o líquido amniótico. O sistema excretor garante que toxinas não se acumulem no ambiente fechado do útero.",
+        duration: 9,
+        anim: "kidneys"
+      },
+      {
+        title: "🦋 Hormônios e Preparação",
+        body: "A partir da semana 8 as glândulas endócrinas fetais se organizam. Hormônios regulam crescimento, metabolismo e até a maturação dos pulmões. Perto do parto, o cortisol fetal ajuda a “avisar” o corpo da mãe que está na hora.",
+        duration: 10,
+        anim: "hormones"
+      },
+      {
+        title: "🍼 Bem-vindo ao Mundo",
+        body: "Após ~40 semanas o bebê nasce. Os pulmões se expandem com o primeiro choro, a circulação muda drasticamente e o contato pele a pele inicia o vínculo. A jornada da vida — que começou com uma única célula — agora continua fora do útero.",
+        duration: 12,
+        anim: "birth"
+      }
+    ];
 
-  if(id==='filter'){
-    S.goal=7; floor(0x0c2018,28,16);
-    const zone=new THREE.Mesh(new THREE.PlaneGeometry(5,16),mat(0x14523f,0x1abc9c,.25));
-    zone.rotation.x=-Math.PI/2; zone.position.set(-11,.03,0); world.add(zone);
-    // label pillar
-    box(-11,.8,0,.4,1.6,.4,0x1abc9c,'deco');
-    addPlayer(0x1abc9c); player.x=-2; player.mesh.position.x=-2;
-    for(let i=0;i<7;i++){
-      ball(1+(i%4)*2.8,.5,-5+Math.floor(i/4)*5.5,.42,0xe24b4b,'tox',
-        (i%2?1:-1)*1.3,(i%3-1)*1.6);
+    // ============================================================
+    // SAVE / CHECKPOINT SYSTEM
+    // ============================================================
+    const SaveSystem = {
+      save(phase, score) {
+        try {
+          localStorage.setItem(CONFIG.saveKey, JSON.stringify({
+            phase: Math.max(1, phase),
+            score: score || 0,
+            graphicsMode: state.graphicsMode,
+            ts: Date.now(),
+          }));
+        } catch (e) { /* private mode */ }
+      },
+
+      load() {
+        try {
+          const raw = localStorage.getItem(CONFIG.saveKey);
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch (e) { return null; }
+      },
+
+      clear() {
+        try { localStorage.removeItem(CONFIG.saveKey); } catch (e) {}
+      },
+
+      hasSave() {
+        const s = this.load();
+        return s && s.phase >= 1 && s.phase <= 6;
+      },
+    };
+
+    // ============================================================
+    // THREE.JS INIT
+    // ============================================================
+    function initThree() {
+      const container = document.getElementById('game-container');
+      state.scene = new THREE.Scene();
+      state.scene.background = new THREE.Color(0x050510);
+      state.scene.fog = new THREE.FogExp2(0x050510, 0.018);
+
+      state.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
+      state.camera.position.set(0, 4, 12);
+
+      state.renderer = new THREE.WebGLRenderer({
+        antialias: !CONFIG.isMobile,
+        powerPreference: 'high-performance',
+      });
+      state.renderer.setSize(window.innerWidth, window.innerHeight);
+      state.renderer.setPixelRatio(CONFIG.isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+      state.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      state.renderer.toneMappingExposure = 1.15;
+      container.appendChild(state.renderer.domElement);
+
+      const ambient = new THREE.AmbientLight(0x404060, 0.5);
+      state.scene.add(ambient);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+      dir.position.set(8, 18, 10);
+      state.scene.add(dir);
+      const fill = new THREE.PointLight(0x6688ff, 0.35, 80);
+      fill.position.set(-10, 5, 5);
+      state.scene.add(fill);
+
+      window.addEventListener('resize', () => {
+        state.camera.aspect = window.innerWidth / window.innerHeight;
+        state.camera.updateProjectionMatrix();
+        state.renderer.setSize(window.innerWidth, window.innerHeight);
+        applyGraphicsMode();
+      });
     }
-    camera.position.set(0,13,14); camera.lookAt(0,0,0);
-  }
 
-  if(id==='hormone'){
-    S.goal=6; floor(0x1a1028,26,16);
-    addPlayer(0xe67e22); player.x=-10; player.mesh.position.x=-10;
-    for(let i=0;i<6;i++) ball(-5+i*2.6,.5,(i%2?3.5:-3.5),.38,0x3ddc84,'good',0,(i%2?-1:1)*2.1);
-    for(let i=0;i<5;i++) ball(-4+i*2.8,.5,0,.4,0xe67e22,'bad',(i%2?1:-1)*2.5,(i%2?-1:1)*1.2);
-    camera.position.set(0,12,14); camera.lookAt(0,0,0);
-  }
-
-  if(id==='birth'){
-    S.goal=1; floor(0x240814,12,30);
-    box(-4.2,1.1,0,1.2,2.2,30,0x3a1424,'wall');
-    box(4.2,1.1,0,1.2,2.2,30,0x3a1424,'wall');
-    addPlayer(0xffb6c8,'baby'); player.x=0; player.z=11; player.mesh.position.set(0,.55,11);
-    for(let i=0;i<6;i++){
-      const side=i%2===0?-1.7:1.7;
-      box(side,.75,-10+i*3.6,3.4,1.3,.85,0xff2d55,'wave');
+    function applyGraphicsMode() {
+      if (state.graphicsMode === '8bit') {
+        const scale = CONFIG.isMobile ? 0.28 : 0.35;
+        state.renderer.setPixelRatio(1);
+        state.renderer.setSize(window.innerWidth * scale, window.innerHeight * scale, false);
+        state.renderer.domElement.style.width = '100%';
+        state.renderer.domElement.style.height = '100%';
+        state.renderer.domElement.style.imageRendering = 'pixelated';
+        state.renderer.toneMappingExposure = 1.4;
+      } else {
+        state.renderer.setPixelRatio(CONFIG.isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+        state.renderer.setSize(window.innerWidth, window.innerHeight, false);
+        state.renderer.domElement.style.width = '100%';
+        state.renderer.domElement.style.height = '100%';
+        state.renderer.domElement.style.imageRendering = 'auto';
+        state.renderer.toneMappingExposure = 1.15;
+      }
     }
-    camera.position.set(0,14,16); camera.lookAt(0,0,0);
-  }
-  hud();
-}
 
-/* sim */
-function move(inp,dt){
-  if(!player||S.mode!=='play') return;
-  const id=PHASE[S.phase].id;
-  const spd=id==='birth'?6: id==='swim'?7.2:7.8;
-  let ix=(inp.r?1:0)-(inp.l?1:0);
-  let iz=(inp.d?1:0)-(inp.u?1:0);
-  const len=Math.hypot(ix,iz)||1; if(ix||iz){ix/=len; iz/=len;}
+    function clearSceneMeshes() {
+      const toRemove = [];
+      state.scene.children.forEach(c => {
+        if (!c.isLight) toRemove.push(c);
+      });
+      toRemove.forEach(c => {
+        state.scene.remove(c);
+        c.traverse(obj => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+            else obj.material.dispose();
+          }
+        });
+      });
+      // Remove dynamic point lights (keep ambient + dir + fill = first 3)
+      const lights = state.scene.children.filter(c => c.isLight && c.type === 'PointLight');
+      lights.forEach(l => {
+        if (l.position.x !== -10) { // keep the fill light
+          state.scene.remove(l);
+        }
+      });
 
-  if(id==='breathe'){
-    player.vx=ix*spd; player.vz=iz*spd;
-    if(inp.edge) player.vy=5.2;
-    player.vy-=12*dt; player.y+=player.vy*dt;
-    // land on platforms
-    let landed=false;
-    if(player.vy<=0){
-      for(const e of ents){
-        if(e.kind!=='plat') continue;
-        const hx=e.sx/2+.2, hz=e.sz/2+.2;
-        if(Math.abs(player.x-e.x)<hx && Math.abs(player.z-e.z)<hz){
-          const top=e.y+e.sy/2+.42;
-          if(player.y<=top+.15 && player.y>=top-.35){player.y=top; player.vy=0; landed=true;}
+      ParticlePool.clear(state.scene);
+      state.obstacles = [];
+      state.collectibles = [];
+      state.goal = null;
+      state.player = null;
+      state.glands = [];
+      state.contractions = [];
+      state.animObjects = [];
+      state.tailSegments = [];
+      state.hormonesCarried = null;
+      state.glandsDelivered = 0;
+      state.toxinsCollected = 0;
+      state.nutrientsCollected = 0;
+      state.goalUnlocked = false;
+      state.npcSperms = [];
+      state.carriedMesh = null;
+      state.wrongGlandCooldown = 0;
+    }
+
+    // ============================================================
+    // MODELS
+    // ============================================================
+    function createSpermPlayer() {
+      const g = new THREE.Group();
+      const segs = CONFIG.isMobile ? 10 : 16;
+
+      const headGeo = new THREE.SphereGeometry(0.42, CONFIG.isMobile ? 12 : 20, CONFIG.isMobile ? 10 : 18);
+      headGeo.scale(1.0, 0.7, 1.4);
+      const headMat = new THREE.MeshStandardMaterial({
+        color: 0xffd0e0, emissive: 0x3a1525, emissiveIntensity: 0.4,
+        metalness: 0.28, roughness: 0.32,
+      });
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.z = -0.15;
+      g.add(head);
+
+      const tip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.2, 0.4, 10),
+        new THREE.MeshStandardMaterial({
+          color: 0xff77a0, emissive: 0x441122, emissiveIntensity: 0.45,
+          metalness: 0.35, roughness: 0.35,
+        })
+      );
+      tip.rotation.x = -Math.PI / 2;
+      tip.position.z = -0.78;
+      g.add(tip);
+
+      const mid = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.24, 0.72, 10),
+        new THREE.MeshStandardMaterial({ color: 0xffa0c0, emissive: 0x331122, metalness: 0.22, roughness: 0.42 })
+      );
+      mid.rotation.x = Math.PI / 2;
+      mid.position.z = 0.55;
+      g.add(mid);
+
+      for (let i = 0; i < 3; i++) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(0.21 - i * 0.015, 0.032, 5, 12),
+          new THREE.MeshStandardMaterial({ color: 0xff6688, emissive: 0x220011, roughness: 0.55 })
+        );
+        ring.rotation.y = Math.PI / 2;
+        ring.position.z = 0.32 + i * 0.16;
+        g.add(ring);
+      }
+
+      const tailGroup = new THREE.Group();
+      const segLen = 0.2;
+      const tailSegs = [];
+      for (let i = 0; i < segs; i++) {
+        const t = i / segs;
+        const r = 0.05 * (1 - t * 0.8);
+        const seg = new THREE.Mesh(
+          new THREE.CylinderGeometry(r, Math.max(0.012, r * 0.82), segLen, 5),
+          new THREE.MeshStandardMaterial({
+            color: new THREE.Color().setHSL(0.95, 0.55, 0.7 - t * 0.28),
+            emissive: 0x220011, emissiveIntensity: 0.18, roughness: 0.48,
+          })
+        );
+        seg.rotation.x = Math.PI / 2;
+        seg.position.z = 0.95 + i * segLen * 0.92;
+        tailGroup.add(seg);
+        tailSegs.push(seg);
+      }
+      g.add(tailGroup);
+      g.userData.tailSegments = tailSegs;
+      g.userData.tailGroup = tailGroup;
+      g.userData.head = head;
+      g.userData.tip = tip;
+
+      const glow = new THREE.PointLight(0xffaacc, 0.7, 7);
+      glow.position.set(0, 0, -0.2);
+      g.add(glow);
+      g.userData.glow = glow;
+
+      state.scene.add(g);
+      state.player = g;
+      state.tailSegments = tailSegs;
+      state.playerRadius = 0.55;
+      return g;
+    }
+
+    function createBabyModel(isPlayer = false) {
+      const g = new THREE.Group();
+      const is8bit = state.graphicsMode === '8bit';
+      const detail = CONFIG.isMobile ? 10 : 20;
+
+      if (is8bit) {
+        const skinMat = new THREE.MeshBasicMaterial({ color: 0xffcc99 });
+        const darkMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+        const limbMat = new THREE.MeshBasicMaterial({ color: 0xf0b080 });
+
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.7), skinMat);
+        body.position.y = 0.1; g.add(body);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.65), skinMat);
+        head.position.y = 1.05; g.add(head);
+        const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.08), darkMat);
+        eyeL.position.set(-0.18, 1.1, 0.32); g.add(eyeL);
+        const eyeR = eyeL.clone(); eyeR.position.x = 0.18; g.add(eyeR);
+        const armL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.55, 0.22), limbMat);
+        armL.position.set(-0.6, 0.35, 0); armL.rotation.z = 0.4; g.add(armL);
+        const armR = armL.clone(); armR.position.x = 0.6; armR.rotation.z = -0.4; g.add(armR);
+        const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.6, 0.25), limbMat);
+        legL.position.set(-0.25, -0.65, 0); g.add(legL);
+        const legR = legL.clone(); legR.position.x = 0.25; g.add(legR);
+        g.userData.limbs = { armL, armR, legL, legR, head, body };
+        g.userData.is8bit = true;
+      } else {
+        const skinMat = new THREE.MeshStandardMaterial({
+          color: 0xffdbac, roughness: 0.45, metalness: 0.05,
+          emissive: 0x221100, emissiveIntensity: 0.05
+        });
+        const softSkin = new THREE.MeshStandardMaterial({ color: 0xffe0c0, roughness: 0.5 });
+
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.72, detail, detail - 2), skinMat);
+        body.scale.set(0.95, 1.25, 0.85); body.position.y = 0.15; g.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.48, detail, detail - 2), softSkin);
+        head.position.y = 1.15; g.add(head);
+
+        for (const x of [-0.28, 0.28]) {
+          const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0xffb8a0 }));
+          cheek.position.set(x, 1.05, 0.32); g.add(cheek);
+        }
+        for (const x of [-0.16, 0.16]) {
+          const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+          eyeWhite.position.set(x, 1.18, 0.4); g.add(eyeWhite);
+          const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+          pupil.position.set(x, 1.18, 0.47); g.add(pupil);
+        }
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6),
+          new THREE.MeshStandardMaterial({ color: 0xf5c99a }));
+        nose.position.set(0, 1.1, 0.48); g.add(nose);
+        const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5),
+          new THREE.MeshStandardMaterial({ color: 0xe07070 }));
+        mouth.scale.set(1.6, 0.5, 0.6); mouth.position.set(0, 0.98, 0.45); g.add(mouth);
+
+        const armL = new THREE.Group();
+        const upperArmL = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.28, 4, 8), skinMat);
+        upperArmL.position.y = -0.15; armL.add(upperArmL);
+        const lowerArmL = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.25, 4, 8), skinMat);
+        lowerArmL.position.y = -0.45; armL.add(lowerArmL);
+        const handL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), skinMat);
+        handL.position.y = -0.65; armL.add(handL);
+        armL.position.set(-0.55, 0.55, 0.1); armL.rotation.z = 0.55; g.add(armL);
+        const armR = armL.clone(); armR.position.x = 0.55; armR.rotation.z = -0.55; g.add(armR);
+
+        const legL = new THREE.Group();
+        const thighL = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.32, 4, 8), skinMat);
+        thighL.position.y = -0.2; legL.add(thighL);
+        const shinL = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.28, 4, 8), skinMat);
+        shinL.position.y = -0.55; legL.add(shinL);
+        const footL = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), skinMat);
+        footL.scale.set(1.2, 0.7, 1.4); footL.position.set(0, -0.78, 0.05); legL.add(footL);
+        legL.position.set(-0.28, -0.55, 0); g.add(legL);
+        const legR = legL.clone(); legR.position.x = 0.28; g.add(legR);
+
+        g.userData.limbs = { armL, armR, legL, legR, head, body, mouth };
+        g.userData.is8bit = false;
+        if (!isPlayer) {
+          const softLight = new THREE.PointLight(0xffe4c4, 0.6, 6);
+          softLight.position.set(0, 0.5, 0.5);
+          g.add(softLight);
         }
       }
+      return g;
     }
-    if(player.y< -2){hurt(); player.y=1; player.vy=0; player.x=-8; player.z=0;}
-    if(!landed && player.y<.55 && player.vy<=0){ /* fall between platforms */ }
-  } else if(id==='swim'){
-    player.vx=ix*spd + 2.0; // current
-    player.vz=iz*spd;
-    player.y=.55;
-  } else if(id==='birth'){
-    player.vx=ix*spd;
-    player.vz=iz*spd - 2.6; // auto climb ( -z )
-    player.y=.55;
-  } else {
-    player.vx=ix*spd; player.vz=iz*spd; player.y=.55;
-  }
 
-  let nx=player.x+player.vx*dt;
-  let nz=player.z+player.vz*dt;
-  const limX=id==='birth'?2.7:13;
-  const limZ=id==='birth'?13:7;
-  nx=Math.max(-limX,Math.min(limX,nx));
-  nz=Math.max(-limZ,Math.min(limZ,nz));
+    function createPlayer(type) {
+      if (type === 'sperm') return createSpermPlayer();
 
-  // walls AABB
-  for(const e of ents){
-    if(e.kind!=='wall') continue;
-    const hx=e.sx/2+player.r, hz=e.sz/2+player.r;
-    if(Math.abs(nx-e.x)<hx && Math.abs(nz-e.z)<hz){
-      const dx=nx-e.x, dz=nz-e.z;
-      if(Math.abs(dx)/hx > Math.abs(dz)/hz) nx=e.x+Math.sign(dx||1)*hx;
-      else nz=e.z+Math.sign(dz||1)*hz;
+      const g = new THREE.Group();
+      if (type === 'nutrient') {
+        const core = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(0.42, 1),
+          new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0x553300, emissiveIntensity: 0.4, metalness: 0.3, roughness: 0.4 })
+        );
+        g.add(core);
+        const shell = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(0.55, 0),
+          new THREE.MeshStandardMaterial({ color: 0xfde68a, transparent: true, opacity: 0.25, wireframe: true })
+        );
+        g.add(shell);
+        g.userData.shell = shell;
+        state.playerRadius = 0.5;
+      } else if (type === 'oxygen') {
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(0.34, 14, 14),
+          new THREE.MeshStandardMaterial({
+            color: 0x38bdf8, emissive: 0x0a3048, emissiveIntensity: 0.5,
+            transparent: true, opacity: 0.92, metalness: 0.1, roughness: 0.3,
+          })
+        );
+        g.add(m);
+        const aura = new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 10, 10),
+          new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.12 })
+        );
+        g.add(aura);
+        g.userData.aura = aura;
+        state.playerRadius = 0.45;
+      } else if (type === 'filter') {
+        const torus = new THREE.Mesh(
+          new THREE.TorusGeometry(0.48, 0.16, 8, 16),
+          new THREE.MeshStandardMaterial({ color: 0xa78bfa, emissive: 0x220044, emissiveIntensity: 0.4, metalness: 0.4, roughness: 0.35 })
+        );
+        g.add(torus);
+        const inner = new THREE.Mesh(
+          new THREE.TorusGeometry(0.28, 0.08, 6, 12),
+          new THREE.MeshStandardMaterial({ color: 0xc4b5fd, emissive: 0x110022 })
+        );
+        g.add(inner);
+        g.userData.spin = true;
+        state.playerRadius = 0.6;
+      } else if (type === 'hormone') {
+        const oct = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.4),
+          new THREE.MeshStandardMaterial({ color: 0xf472b6, emissive: 0x440022, emissiveIntensity: 0.45, metalness: 0.35, roughness: 0.3 })
+        );
+        g.add(oct);
+        g.userData.spin = true;
+        state.playerRadius = 0.5;
+      } else if (type === 'baby') {
+        const baby = createBabyModel(true);
+        g.add(baby);
+        g.userData.babyRoot = baby;
+        g.userData.limbs = baby.userData.limbs;
+        g.userData.is8bit = baby.userData.is8bit;
+        state.playerRadius = 0.7;
+      }
+      state.scene.add(g);
+      state.player = g;
+      return g;
     }
-  }
-  player.x=nx; player.z=nz;
-  player.mesh.position.set(player.x, player.y + Math.sin(S.t*5)*.04, player.z);
-  if(Math.abs(player.vx)+Math.abs(player.vz)>.2)
-    player.mesh.rotation.y=Math.atan2(player.vx, player.vz||.01);
-  if(player.mesh.userData.tail)
-    player.mesh.userData.tail.rotation.y=Math.sin(S.t*14)*.4;
-}
 
-function updateEnts(dt){
-  if(S.mode!=='play'||!player) return;
-  const id=PHASE[S.phase].id;
+    function createTunnel(length, radius, color, segments = 24) {
+      const group = new THREE.Group();
+      const segs = CONFIG.isMobile ? Math.min(segments, 16) : segments;
+      const tube = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, length, segs, 1, true),
+        new THREE.MeshStandardMaterial({
+          color, side: THREE.BackSide, transparent: true, opacity: 0.9,
+          roughness: 0.75, metalness: 0.05,
+        })
+      );
+      tube.rotation.x = Math.PI / 2;
+      tube.position.z = -length / 2;
+      group.add(tube);
 
-  for(const e of ents){
-    if(e.taken) continue;
-    if(e.kind==='bad'||e.kind==='tox'||e.kind==='good'){
-      e.x+=e.vx*dt; e.z+=e.vz*dt;
-      if(e.x<-12||e.x>12) e.vx*=-1;
-      if(e.z<-6.5||e.z>6.5) e.vz*=-1;
-      e.mesh.position.set(e.x, e.y+Math.sin(S.t*3+e.x)*.1, e.z);
-      e.mesh.rotation.y+=dt;
+      const ringStep = CONFIG.isMobile ? 10 : 6;
+      for (let i = 0; i < length; i += ringStep) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(radius - 0.06, 0.06, 5, 18),
+          new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })
+        );
+        ring.position.z = -i;
+        group.add(ring);
+      }
+      state.scene.add(group);
+      return group;
     }
-    if(e.kind==='wave'){
-      e.z+=3.6*dt; if(e.z>13) e.z=-13;
-      e.mesh.position.z=e.z;
-    }
-    if(e.kind==='o2'){ e.mesh.position.y=1.3+Math.sin(S.t*3+e.x)*.3; e.mesh.rotation.y+=dt*1.5; }
-    if(e.kind==='goal'){ e.mesh.rotation.y+=dt*.9; e.mesh.position.y=e.y+Math.sin(S.t*2)*.12; }
-  }
 
-  // collide
-  for(const e of ents){
-    if(e.taken||e.kind==='wall'||e.kind==='plat'||e.kind==='deco') continue;
-    const rr=(player.r+e.r)*(player.r+e.r);
-    const d2=(player.x-e.x)**2+(player.z-e.z)**2;
-    if(d2>rr) continue;
-
-    if(e.kind==='bad'||e.kind==='wave'){ hurt(); return; }
-    if(e.kind==='goal'){ e.taken=true; e.mesh.visible=false; S.prog=S.goal; burst(e.x,e.y,e.z,0xff6b9d,14); done(); return; }
-    if(e.kind==='o2'||e.kind==='good'){
-      e.taken=true; e.mesh.visible=false; S.prog++; S.score+=90;
-      burst(e.x,e.y,e.z,e.kind==='o2'?0x4aa3ff:0x3ddc84,8);
-      toast(e.kind==='o2'?'+O₂':'+hormônio');
-      hud();
-      if(S.prog>=S.goal) done();
-      return;
+    // ============================================================
+    // PARTICLES
+    // ============================================================
+    function spawnBoostTrail() {
+      if (!state.player || ParticlePool.active.length >= CONFIG.maxParticles) return;
+      const p = ParticlePool.acquire(state.scene);
+      p.material.color.setHex(Math.random() > 0.4 ? 0x22d3ee : 0xa5f3fc);
+      p.position.copy(state.player.position);
+      p.position.x += (Math.random() - 0.5) * 0.35;
+      p.position.y += (Math.random() - 0.5) * 0.35;
+      p.position.z += 0.9 + Math.random() * 0.4;
+      p.scale.setScalar(0.8 + Math.random() * 0.5);
+      p.userData = {
+        life: 0.45,
+        vel: new THREE.Vector3((Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6, 2.2 + Math.random()),
+      };
     }
-    if(e.kind==='tox'){
-      const dx=e.x-player.x, dz=e.z-player.z, d=Math.hypot(dx,dz)||1;
-      e.vx+=dx/d*8; e.vz+=dz/d*8;
-      const sp=Math.hypot(e.vx,e.vz); if(sp>9){e.vx=e.vx/sp*9; e.vz=e.vz/sp*9;}
-      if(e.x<-9.2){
-        e.taken=true; e.mesh.visible=false; S.prog++; S.score+=75;
-        burst(e.x,.6,e.z,0x1abc9c,8); toast('filtrada');
-        hud(); if(S.prog>=S.goal) done();
+
+    function spawnHitParticles(pos, color = 0xff4444) {
+      const count = CONFIG.isMobile ? 4 : 6;
+      for (let i = 0; i < count; i++) {
+        if (ParticlePool.active.length >= CONFIG.maxParticles) break;
+        const p = ParticlePool.acquire(state.scene);
+        p.material.color.setHex(color);
+        p.position.copy(pos);
+        p.scale.setScalar(0.7);
+        p.userData = {
+          life: 0.35 + Math.random() * 0.2,
+          vel: new THREE.Vector3((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 2),
+        };
       }
     }
-  }
 
-  if(id==='birth' && player.z<-10.5){ S.prog=1; done(); }
-  if(id==='swim'){ // soft progress display by distance
-    S.prog=Math.max(S.prog, Math.min(.99, (player.x+12)/24));
-    hud();
-  }
-}
+    // ============================================================
+    // LEVEL BUILDERS (contagens reduzidas em mobile)
+    // ============================================================
+    function mobCount(desktop, mobile) {
+      return CONFIG.isMobile ? mobile : desktop;
+    }
 
-function cam(dt){
-  if(!player||S.mode!=='play') return;
-  const id=PHASE[S.phase].id;
-  const desired=new THREE.Vector3(player.x*.25, id==='digest'?15:12.5, (id==='birth'?13:15)+player.z*.12);
-  camera.position.lerp(desired, 1-Math.pow(.0008,dt));
-  camera.lookAt(player.x*.4, .2, player.z*.3);
-}
+    function buildSpermLevel() {
+      clearSceneMeshes();
+      state.scene.background = new THREE.Color(0x1a0610);
+      state.scene.fog = new THREE.FogExp2(0x1a0610, 0.026);
+      createTunnel(110, 5.4, 0x6b2850, 28);
 
-function stepParticles(dt){
-  for(let i=particles.length-1;i>=0;i--){
-    const p=particles[i];
-    p.life-=dt; p.vy-=6*dt;
-    p.m.position.x+=p.vx*dt; p.m.position.y+=p.vy*dt; p.m.position.z+=p.vz*dt;
-    p.m.scale.setScalar(Math.max(.01,p.life));
-    if(p.life<=0){ world.remove(p.m); p.m.geometry.dispose(); p.m.material.dispose(); particles.splice(i,1); }
-  }
-}
+      for (let i = 0; i < mobCount(30, 15); i++) {
+        const d = new THREE.Mesh(
+          new THREE.SphereGeometry(0.04 + Math.random() * 0.06, 4, 4),
+          new THREE.MeshBasicMaterial({ color: 0xffaacc, transparent: true, opacity: 0.35 })
+        );
+        d.position.set((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, -Math.random() * 100);
+        d.userData = { type: 'ambientDrift', radius: 0.1, vel: new THREE.Vector3(0, 0, 0.4 + Math.random() * 0.5) };
+        state.scene.add(d);
+        state.obstacles.push(d);
+      }
 
-let last=performance.now();
-function frame(now){
-  const dt=Math.min(.05,(now-last)/1000); last=now;
-  S.t+=dt; if(S.inv>0) S.inv-=dt;
-  if(S.toastT>0){S.toastT-=dt; if(S.toastT<=0) el.toast.classList.remove('show');}
+      createPlayer('sperm');
+      state.player.position.set(0, 0, 7);
 
-  const inp=input();
-  // UI confirm with edge only, and not while lock settles
-  if(!el.overlay.classList.contains('hide') && inp.edge && !lockUI){
-    const b=el.card.querySelector('.btn'); b&&b.click();
-  } else if(!el.overlay.classList.contains('hide') && inp.edge && lockUI){
-    // ignore first edge after panel open
-  }
+      state.npcSperms = [];
+      for (let i = 0; i < mobCount(10, 6); i++) {
+        const npc = new THREE.Group();
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.28, 8, 8),
+          new THREE.MeshStandardMaterial({ color: 0xffb0c8, emissive: 0x331122, transparent: true, opacity: 0.85 })
+        );
+        head.scale.set(1, 0.7, 1.3);
+        npc.add(head);
+        const tail = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04, 0.012, 1.4, 4),
+          new THREE.MeshStandardMaterial({ color: 0xff88aa, transparent: true, opacity: 0.7 })
+        );
+        tail.rotation.x = Math.PI / 2;
+        tail.position.z = 0.95;
+        npc.add(tail);
+        npc.position.set((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, 2 - Math.random() * 25);
+        npc.userData = {
+          type: 'npcSperm', radius: 0.45,
+          speed: 4.0 + Math.random() * 1.8,
+          wobble: Math.random() * 10,
+          failed: false,
+        };
+        state.scene.add(npc);
+        state.npcSperms.push(npc);
+        state.obstacles.push(npc);
+      }
 
-  if(S.mode==='play'){ move(inp,dt); updateEnts(dt); cam(dt); }
-  else if(player?.mesh) player.mesh.rotation.y+=dt*.7;
+      const egg = new THREE.Group();
+      const eggCore = new THREE.Mesh(
+        new THREE.SphereGeometry(2.45, CONFIG.isMobile ? 20 : 32, CONFIG.isMobile ? 20 : 32),
+        new THREE.MeshStandardMaterial({
+          color: 0xffe8f0, emissive: 0x3a1525, emissiveIntensity: 0.35,
+          metalness: 0.5, roughness: 0.28,
+        })
+      );
+      egg.add(eggCore);
+      for (let i = 0; i < 3; i++) {
+        const corona = new THREE.Mesh(
+          new THREE.TorusGeometry(2.9 + i * 0.35, 0.1 - i * 0.02, 6, 28),
+          new THREE.MeshStandardMaterial({
+            color: 0xffaacc, emissive: 0x441122, transparent: true, opacity: 0.7 - i * 0.15,
+          })
+        );
+        corona.rotation.x = Math.PI / 2;
+        corona.userData = { spinSpeed: 0.3 + i * 0.15 };
+        egg.add(corona);
+      }
+      egg.position.set(0, 0, -102);
+      egg.userData = { radius: 2.8 };
+      state.scene.add(egg);
+      state.goal = egg;
+      const eggLight = new THREE.PointLight(0xffaacc, 2.5, 30);
+      eggLight.position.copy(egg.position);
+      state.scene.add(eggLight);
 
-  if(player?.mesh) player.mesh.visible = S.inv<=0 || (Math.floor(S.t*18)%2===0);
-  stepParticles(dt);
-  renderer.render(scene,camera);
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-title();
-</script>
+      for (let i = 0; i < mobCount(14, 8); i++) {
+        const w = new THREE.Mesh(
+          new THREE.SphereGeometry(0.55 + Math.random() * 0.4, 10, 10),
+          new THREE.MeshStandardMaterial({ color: 0xf1f5f9, emissive: 0x1e293b, roughness: 0.55 })
+        );
+        w.position.set((Math.random() - 0.5) * 7.5, (Math.random() - 0.5) * 7.5, -8 - Math.random() * 90);
+        w.userData = { type: 'wbc', radius: 0.7 + Math.random() * 0.3, speed: 0.028 + Math.random() * 0.025, wobble: Math.random() * 10 };
+        state.scene.add(w);
+        state.obstacles.push(w);
+      }
+      for (let i = 0; i < mobCount(9, 5); i++) {
+        const a = new THREE.Mesh(
+          new THREE.SphereGeometry(1.3 + Math.random() * 0.5, 10, 10),
+          new THREE.MeshStandardMaterial({
+            color: 0xa3e635, transparent: true, opacity: 0.36,
+            emissive: 0x336600, emissiveIntensity: 0.35,
+          })
+        );
+        a.position.set((Math.random() - 0.5) * 6.5, (Math.random() - 0.5) * 6.5, -14 - Math.random() * 80);
+        a.userData = { type: 'acid', radius: 1.5, damage: CONFIG.damage.acid, pulse: Math.random() * 6 };
+        state.scene.add(a);
+        state.obstacles.push(a);
+      }
+      for (let i = 0; i < mobCount(10, 7); i++) {
+        const r = new THREE.Mesh(
+          new THREE.TorusGeometry(1.25, 0.11, 6, 18),
+          new THREE.MeshStandardMaterial({ color: 0x2dd4bf, emissive: 0x0d9488, emissiveIntensity: 0.7 })
+        );
+        r.position.set((Math.random() - 0.5) * 2.6, (Math.random() - 0.5) * 2.6, -14 - i * 9);
+        r.userData = { type: 'boost', radius: 1.4, spin: true };
+        state.scene.add(r);
+        state.collectibles.push(r);
+      }
+      state.camera.position.set(0, 3.4, 14);
+    }
+
+    function buildDigestiveLevel() {
+      clearSceneMeshes();
+      state.scene.background = new THREE.Color(0x1c1004);
+      state.scene.fog = new THREE.FogExp2(0x1c1004, 0.03);
+      createTunnel(98, 4.7, 0x5c3810, 22);
+
+      for (let i = 0; i < mobCount(18, 10); i++) {
+        const b = new THREE.Mesh(
+          new THREE.SphereGeometry(0.15 + Math.random() * 0.2, 5, 5),
+          new THREE.MeshStandardMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.25, emissive: 0x553300 })
+        );
+        b.position.set((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7, -Math.random() * 90);
+        b.userData = { type: 'ambientDrift', radius: 0.2, vel: new THREE.Vector3((Math.random() - 0.5) * 0.3, 0.2 + Math.random() * 0.4, 0.3) };
+        state.scene.add(b);
+        state.obstacles.push(b);
+      }
+
+      createPlayer('nutrient');
+      state.player.position.set(0, 0, 5);
+
+      const goalGroup = new THREE.Group();
+      const goal = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.5, 3.5, 2.6, 18, 1, true),
+        new THREE.MeshStandardMaterial({
+          color: 0xfbbf24, emissive: 0x664400, emissiveIntensity: 0.55,
+          side: THREE.DoubleSide, transparent: true, opacity: 0.7,
+        })
+      );
+      goal.rotation.x = Math.PI / 2;
+      goalGroup.add(goal);
+      const goalCore = new THREE.Mesh(
+        new THREE.TorusGeometry(2.2, 0.25, 6, 18),
+        new THREE.MeshStandardMaterial({ color: 0xfde68a, emissive: 0xaa7700, emissiveIntensity: 0.6 })
+      );
+      goalCore.rotation.x = Math.PI / 2;
+      goalGroup.add(goalCore);
+      goalGroup.position.z = -90;
+      goalGroup.userData = { radius: 3.8 };
+      state.scene.add(goalGroup);
+      state.goal = goalGroup;
+      const gLight = new THREE.PointLight(0xfbbf24, 3, 24);
+      gLight.position.set(0, 0, -90);
+      state.scene.add(gLight);
+
+      for (let i = 0; i < mobCount(10, 6); i++) {
+        const a = new THREE.Mesh(
+          new THREE.SphereGeometry(1.3 + Math.random() * 0.5, 8, 8),
+          new THREE.MeshStandardMaterial({
+            color: 0x84cc16, transparent: true, opacity: 0.42,
+            emissive: 0x335500, emissiveIntensity: 0.3,
+          })
+        );
+        a.position.set((Math.random() - 0.5) * 6.2, (Math.random() - 0.5) * 6.2, -8 - Math.random() * 74);
+        a.userData = { type: 'acid', radius: 1.5, damage: CONFIG.damage.acid, pulse: Math.random() * 5 };
+        state.scene.add(a);
+        state.obstacles.push(a);
+      }
+      for (let i = 0; i < mobCount(10, 6); i++) {
+        const e = new THREE.Mesh(
+          new THREE.TetrahedronGeometry(0.85 + Math.random() * 0.25),
+          new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x550000, emissiveIntensity: 0.5, metalness: 0.45 })
+        );
+        e.position.set((Math.random() - 0.5) * 5.2, (Math.random() - 0.5) * 5.2, -12 - Math.random() * 70);
+        e.userData = { type: 'enzyme', radius: 0.9, rotSpeed: 0.07 + Math.random() * 0.06 };
+        state.scene.add(e);
+        state.obstacles.push(e);
+      }
+      // Mais nutrientes que o mínimo para não ficar impossível
+      for (let i = 0; i < mobCount(12, 9); i++) {
+        const n = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.32),
+          new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x114411, emissiveIntensity: 0.55 })
+        );
+        n.position.set((Math.random() - 0.5) * 4.2, (Math.random() - 0.5) * 4.2, -10 - Math.random() * 72);
+        n.userData = { type: 'heal', radius: 0.45, bob: Math.random() * 6 };
+        state.scene.add(n);
+        state.collectibles.push(n);
+      }
+      state.camera.position.set(0, 3.6, 11.5);
+    }
+
+    function buildRespiratoryLevel() {
+      clearSceneMeshes();
+      state.scene.background = new THREE.Color(0x040c14);
+      state.scene.fog = new THREE.FogExp2(0x040c14, 0.02);
+      createTunnel(92, 4.3, 0x1a4060, 24);
+
+      for (let i = 0; i < mobCount(25, 12); i++) {
+        const a = new THREE.Mesh(
+          new THREE.SphereGeometry(0.05 + Math.random() * 0.08, 4, 4),
+          new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.4 })
+        );
+        a.position.set((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7, -Math.random() * 85);
+        a.userData = { type: 'ambientDrift', radius: 0.1, vel: new THREE.Vector3(0, 0, 1.2 + Math.random() * 0.8) };
+        state.scene.add(a);
+        state.obstacles.push(a);
+      }
+
+      createPlayer('oxygen');
+      state.player.position.set(0, 0, 5);
+
+      const alvGroup = new THREE.Group();
+      const alv = new THREE.Mesh(
+        new THREE.SphereGeometry(2.7, CONFIG.isMobile ? 16 : 24, CONFIG.isMobile ? 16 : 24),
+        new THREE.MeshStandardMaterial({
+          color: 0xfde68a, emissive: 0x665500, emissiveIntensity: 0.45,
+          transparent: true, opacity: 0.88, metalness: 0.2,
+        })
+      );
+      alvGroup.add(alv);
+      for (let i = 0; i < 2; i++) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(3.0 + i * 0.4, 0.08, 6, 24),
+          new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.5 - i * 0.15 })
+        );
+        ring.rotation.x = Math.PI / 2 * (0.7 + i * 0.2);
+        alvGroup.add(ring);
+      }
+      alvGroup.position.z = -86;
+      alvGroup.userData = { radius: 3.0 };
+      state.scene.add(alvGroup);
+      state.goal = alvGroup;
+      const aLight = new THREE.PointLight(0xfde68a, 3.2, 26);
+      aLight.position.set(0, 0, -86);
+      state.scene.add(aLight);
+
+      for (let i = 0; i < mobCount(16, 9); i++) {
+        const p = new THREE.Mesh(
+          new THREE.SphereGeometry(0.3 + Math.random() * 0.25, 7, 7),
+          new THREE.MeshStandardMaterial({ color: 0x3f3f46, emissive: 0x111111, roughness: 0.75 })
+        );
+        p.position.set((Math.random() - 0.5) * 6.2, (Math.random() - 0.5) * 6.2, -6 - Math.random() * 74);
+        p.userData = {
+          type: 'pollution', radius: 0.5,
+          drift: new THREE.Vector3((Math.random() - 0.5) * 0.03, (Math.random() - 0.5) * 0.03, 0.01 + Math.random() * 0.018),
+        };
+        state.scene.add(p);
+        state.obstacles.push(p);
+      }
+      for (let i = 0; i < mobCount(8, 5); i++) {
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(1.1 + Math.random() * 0.3, 10, 10),
+          new THREE.MeshStandardMaterial({
+            color: 0x86efac, transparent: true, opacity: 0.48,
+            emissive: 0x14532d, emissiveIntensity: 0.2,
+          })
+        );
+        m.position.set((Math.random() - 0.5) * 5.2, (Math.random() - 0.5) * 5.2, -12 - Math.random() * 62);
+        m.userData = { type: 'mucus', radius: 1.3, pulse: Math.random() * 4 };
+        state.scene.add(m);
+        state.obstacles.push(m);
+      }
+      state.camera.position.set(0, 3.1, 10.8);
+    }
+
+    function buildExcretoryLevel() {
+      clearSceneMeshes();
+      state.scene.background = new THREE.Color(0x0a0414);
+      state.scene.fog = new THREE.FogExp2(0x0a0414, 0.018);
+
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(46, 115),
+        new THREE.MeshStandardMaterial({ color: 0x2a1a3a, side: THREE.DoubleSide, roughness: 0.9 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.z = -48;
+      state.scene.add(floor);
+
+      for (let z = 5; z > -95; z -= 8) {
+        const line = new THREE.Mesh(
+          new THREE.BoxGeometry(42, 0.05, 0.1),
+          new THREE.MeshBasicMaterial({ color: 0x6d28d9, transparent: true, opacity: 0.28 })
+        );
+        line.position.set(0, 0.06, z);
+        state.scene.add(line);
+      }
+
+      for (const x of [-20, 20]) {
+        const w = new THREE.Mesh(
+          new THREE.PlaneGeometry(115, 10),
+          new THREE.MeshStandardMaterial({ color: 0x1a0e28, side: THREE.DoubleSide, transparent: true, opacity: 0.5 })
+        );
+        w.rotation.y = Math.PI / 2;
+        w.position.set(x, 2.5, -48);
+        state.scene.add(w);
+      }
+
+      createPlayer('filter');
+      state.player.position.set(0, 1.2, 6);
+
+      const goal = new THREE.Mesh(
+        new THREE.BoxGeometry(14, 0.5, 5.5),
+        new THREE.MeshStandardMaterial({ color: 0xa78bfa, emissive: 0x4c1d95, emissiveIntensity: 0.6 })
+      );
+      goal.position.set(0, 0.3, -78);
+      goal.userData = { radius: 7 };
+      state.scene.add(goal);
+      state.goal = goal;
+      const goalRing = new THREE.Mesh(
+        new THREE.TorusGeometry(5, 0.15, 6, 24),
+        new THREE.MeshStandardMaterial({ color: 0xc4b5fd, emissive: 0x7c3aed, emissiveIntensity: 0.5 })
+      );
+      goalRing.rotation.x = Math.PI / 2;
+      goalRing.position.set(0, 0.5, -78);
+      state.scene.add(goalRing);
+
+      for (let i = 0; i < mobCount(20, 14); i++) {
+        const t = new THREE.Mesh(
+          new THREE.SphereGeometry(0.38, 8, 8),
+          new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x440000, emissiveIntensity: 0.55 })
+        );
+        t.position.set((Math.random() - 0.5) * 17, 0.6 + Math.random() * 2.5, -4 - Math.random() * 68);
+        t.userData = { type: 'toxin', radius: 0.5, points: 10, bob: Math.random() * 5 };
+        state.scene.add(t);
+        state.collectibles.push(t);
+      }
+      for (let i = 0; i < mobCount(12, 8); i++) {
+        const p = new THREE.Mesh(
+          new THREE.BoxGeometry(0.48, 0.48, 0.48),
+          new THREE.MeshStandardMaterial({ color: 0x3b82f6, emissive: 0x001144, emissiveIntensity: 0.4, metalness: 0.35 })
+        );
+        p.position.set((Math.random() - 0.5) * 17, 0.6 + Math.random() * 2.5, -6 - Math.random() * 64);
+        p.userData = { type: 'protein', radius: 0.55, spin: true };
+        state.scene.add(p);
+        state.obstacles.push(p);
+      }
+      for (let i = 0; i < mobCount(7, 5); i++) {
+        const wall = new THREE.Mesh(
+          new THREE.BoxGeometry(13, 3.5, 1.0),
+          new THREE.MeshStandardMaterial({ color: 0x5b21b6, transparent: true, opacity: 0.78, emissive: 0x2e1065, emissiveIntensity: 0.25 })
+        );
+        wall.position.set((i % 2 === 0 ? -7.5 : 7.5), 1.8, -10 - i * 9.5);
+        wall.userData = {
+          type: 'wall',
+          // AABB half-extents
+          halfW: 6.5, halfH: 1.75, halfD: 0.55,
+          dir: i % 2 === 0 ? 1 : -1,
+          speed: 0.045 + i * 0.004,
+        };
+        state.scene.add(wall);
+        state.obstacles.push(wall);
+      }
+      state.camera.position.set(0, 11, 16);
+      state.camera.lookAt(0, 0, -16);
+    }
+
+    function buildEndocrineLevel() {
+      clearSceneMeshes();
+      state.scene.background = new THREE.Color(0x120616);
+      state.scene.fog = new THREE.FogExp2(0x120616, 0.016);
+
+      const ground = new THREE.Mesh(
+        new THREE.CircleGeometry(32, 36),
+        new THREE.MeshStandardMaterial({ color: 0x2a1528, side: THREE.DoubleSide, roughness: 0.9 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      state.scene.add(ground);
+
+      for (let r = 6; r <= 26; r += 6) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(r, 0.07, 5, 36),
+          new THREE.MeshBasicMaterial({ color: 0x4a2040, transparent: true, opacity: 0.28 })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.05;
+        state.scene.add(ring);
+      }
+
+      createPlayer('hormone');
+      state.player.position.set(0, 1.1, 6);
+      state.hormonesCarried = null;
+      state.glandsDelivered = 0;
+      state.carriedMesh = null;
+      document.getElementById('extra-info').textContent = 'Entregues: 0/4';
+
+      const glandColors = [0xf472b6, 0x34d399, 0x60a5fa, 0xfbbf24];
+      const glandNames = ['Hipófise', 'Tireoide', 'Adrenal', 'Pâncreas'];
+      state.glands = [];
+
+      const positions = [
+        [0, 1.4, -28],
+        [14, 1.4, -14],
+        [-14, 1.4, -14],
+        [0, 1.4, 2],
+      ];
+      for (let i = 0; i < 4; i++) {
+        const gland = new THREE.Mesh(
+          new THREE.SphereGeometry(1.7, 16, 16),
+          new THREE.MeshStandardMaterial({
+            color: glandColors[i], emissive: glandColors[i], emissiveIntensity: 0.4,
+            metalness: 0.25, roughness: 0.35,
+          })
+        );
+        gland.position.set(...positions[i]);
+        gland.userData = { type: 'gland', id: i, name: glandNames[i], delivered: false, radius: 2.0 };
+        state.scene.add(gland);
+        state.glands.push(gland);
+        state.collectibles.push(gland);
+
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(2.1, 0.1, 6, 18),
+          new THREE.MeshStandardMaterial({ color: glandColors[i], emissive: glandColors[i], emissiveIntensity: 0.5 })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.copy(gland.position);
+        ring.position.y = 0.15;
+        state.scene.add(ring);
+
+        const pl = new THREE.PointLight(glandColors[i], 1.2, 14);
+        pl.position.copy(gland.position);
+        state.scene.add(pl);
+      }
+
+      for (let i = 0; i < 8; i++) {
+        const id = i % 4;
+        const h = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.36),
+          new THREE.MeshStandardMaterial({ color: glandColors[id], emissive: glandColors[id], emissiveIntensity: 0.45 })
+        );
+        const angle = Math.random() * Math.PI * 2;
+        const rad = 4 + Math.random() * 10;
+        h.position.set(Math.cos(angle) * rad, 0.8 + Math.random() * 1.5, -12 + Math.sin(angle) * rad * 0.6);
+        h.userData = { type: 'hormonePickup', targetId: id, radius: 0.5, bob: Math.random() * 5 };
+        state.scene.add(h);
+        state.collectibles.push(h);
+      }
+      for (let i = 0; i < mobCount(6, 4); i++) {
+        const wrong = new THREE.Mesh(
+          new THREE.TetrahedronGeometry(0.42),
+          new THREE.MeshStandardMaterial({ color: 0x6b7280, emissive: 0x222222 })
+        );
+        wrong.position.set((Math.random() - 0.5) * 18, 1.1, -6 - Math.random() * 28);
+        wrong.userData = { type: 'wrongHormone', radius: 0.5, spin: true };
+        state.scene.add(wrong);
+        state.obstacles.push(wrong);
+      }
+
+      state.goal = { position: new THREE.Vector3(0, 0, -55), userData: { radius: 1 } };
+      state.camera.position.set(0, 14, 18);
+      state.camera.lookAt(0, 0, -12);
+    }
+
+    function buildBirthLevel() {
+      clearSceneMeshes();
+      state.scene.background = new THREE.Color(0x06030c);
+      state.scene.fog = new THREE.FogExp2(0x06030c, 0.038);
+      createTunnel(70, 3.1, 0x5a2848, 20);
+      createPlayer('baby');
+      state.player.position.set(0, 0, 4);
+      state.player.scale.setScalar(0.78);
+
+      const light = new THREE.Mesh(
+        new THREE.SphereGeometry(3.6, CONFIG.isMobile ? 16 : 24, CONFIG.isMobile ? 16 : 24),
+        new THREE.MeshBasicMaterial({ color: 0xfff7ed })
+      );
+      light.position.z = -62;
+      light.userData = { radius: 3.8 };
+      state.scene.add(light);
+      state.goal = light;
+
+      const pl = new THREE.PointLight(0xfff0dd, 6, 55);
+      pl.position.set(0, 0, -55);
+      state.scene.add(pl);
+      const halo = new THREE.Mesh(
+        new THREE.RingGeometry(4, 6.5, 24),
+        new THREE.MeshBasicMaterial({ color: 0xffe4c4, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+      );
+      halo.position.z = -61;
+      state.scene.add(halo);
+
+      state.contractions = [];
+      for (let i = 0; i < 9; i++) {
+        const left = new THREE.Mesh(
+          new THREE.BoxGeometry(1.75, 6.0, 4.2),
+          new THREE.MeshStandardMaterial({
+            color: 0x7c3a5e, transparent: true, opacity: 0.88,
+            emissive: 0x3b1528, emissiveIntensity: 0.25,
+          })
+        );
+        left.position.set(-3.3, 0, -5 - i * 6.5);
+        left.userData = {
+          type: 'contraction', side: 'left', baseX: -3.3, phase: i * 0.6,
+          halfW: 0.9, halfH: 3.0, halfD: 2.1,
+        };
+        state.scene.add(left);
+        state.obstacles.push(left);
+        state.contractions.push(left);
+
+        const right = left.clone();
+        right.position.x = 3.3;
+        right.userData = {
+          type: 'contraction', side: 'right', baseX: 3.3, phase: i * 0.6,
+          halfW: 0.9, halfH: 3.0, halfD: 2.1,
+        };
+        state.scene.add(right);
+        state.obstacles.push(right);
+        state.contractions.push(right);
+      }
+      state.camera.position.set(0, 2.3, 11.5);
+    }
+
+    // ============================================================
+    // EMBRYO / CUTSCENE (mantido, com detalhe reduzido em mobile)
+    // ============================================================
+    function createEmbryoModel(stage) {
+      const g = new THREE.Group();
+      const skin = 0xffdbac;
+      const det = CONFIG.isMobile ? 10 : 14;
+      const skinMat = new THREE.MeshStandardMaterial({ color: skin, roughness: 0.55, metalness: 0.05 });
+      const pinkMat = new THREE.MeshStandardMaterial({ color: 0xf9a8d4, emissive: 0x440033, emissiveIntensity: 0.25 });
+
+      if (stage <= 1) {
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          const cell = new THREE.Mesh(new THREE.SphereGeometry(0.45, det, det), pinkMat.clone());
+          cell.position.set(Math.cos(a) * 0.55, Math.sin(a) * 0.35, Math.sin(a * 2) * 0.3);
+          g.add(cell);
+        }
+        g.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, det, det), pinkMat));
+      } else if (stage === 2) {
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, det, det), pinkMat);
+        body.scale.set(1, 1.3, 0.85);
+        g.add(body);
+        const gut = new THREE.Mesh(
+          new THREE.TorusGeometry(0.55, 0.12, 6, 12),
+          new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x553300, emissiveIntensity: 0.3 })
+        );
+        gut.rotation.x = Math.PI / 2;
+        gut.position.y = -0.1;
+        g.add(gut);
+      } else if (stage === 3) {
+        const body = new THREE.Mesh(new THREE.SphereGeometry(1.0, det, det), skinMat);
+        body.scale.set(0.95, 1.35, 0.85);
+        g.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, det, det), skinMat);
+        head.position.y = 1.15;
+        g.add(head);
+        for (const x of [-0.55, 0.55]) {
+          const lung = new THREE.Mesh(
+            new THREE.SphereGeometry(0.28, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0x7dd3fc, emissive: 0x0a3048, emissiveIntensity: 0.35, transparent: true, opacity: 0.85 })
+          );
+          lung.position.set(x, 0.2, 0.35);
+          g.add(lung);
+        }
+        for (const [x, y] of [[-0.7, -0.3], [0.7, -0.3], [-0.45, -0.9], [0.45, -0.9]]) {
+          const limb = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.25, 3, 5), skinMat);
+          limb.position.set(x, y, 0);
+          g.add(limb);
+        }
+      } else if (stage === 4) {
+        const body = new THREE.Mesh(new THREE.SphereGeometry(1.15, det, det), skinMat);
+        body.scale.set(0.9, 1.4, 0.8);
+        g.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.58, det, det), skinMat);
+        head.position.y = 1.35;
+        g.add(head);
+        for (const x of [-0.5, 0.5]) {
+          const k = new THREE.Mesh(
+            new THREE.SphereGeometry(0.22, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0xa78bfa, emissive: 0x220044, emissiveIntensity: 0.4 })
+          );
+          k.scale.set(1, 1.3, 0.7);
+          k.position.set(x, 0.15, -0.2);
+          g.add(k);
+        }
+        for (const [x, y, rz] of [[-0.85, 0.1, 0.5], [0.85, 0.1, -0.5], [-0.5, -1.0, 0.3], [0.5, -1.0, -0.3]]) {
+          const limb = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.35, 3, 5), skinMat);
+          limb.position.set(x, y, 0);
+          limb.rotation.z = rz;
+          g.add(limb);
+        }
+      } else if (stage === 5) {
+        const body = new THREE.Mesh(new THREE.SphereGeometry(1.25, det, det), skinMat);
+        body.scale.set(0.88, 1.45, 0.78);
+        g.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.65, det, det), skinMat);
+        head.position.y = 1.5;
+        g.add(head);
+        const cols = [0xf472b6, 0x34d399, 0x60a5fa, 0xfbbf24];
+        for (let i = 0; i < 4; i++) {
+          const gl = new THREE.Mesh(
+            new THREE.SphereGeometry(0.12, 6, 6),
+            new THREE.MeshStandardMaterial({ color: cols[i], emissive: cols[i], emissiveIntensity: 0.5 })
+          );
+          gl.position.set((i % 2 === 0 ? -0.35 : 0.35), 0.3 - Math.floor(i / 2) * 0.4, 0.4);
+          g.add(gl);
+        }
+        for (const [x, y, rz] of [[-0.95, 0.15, 0.55], [0.95, 0.15, -0.55], [-0.55, -1.15, 0.25], [0.55, -1.15, -0.25]]) {
+          const limb = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.4, 3, 5), skinMat);
+          limb.position.set(x, y, 0);
+          limb.rotation.z = rz;
+          g.add(limb);
+        }
+      } else {
+        return createBabyModel(false);
+      }
+      return g;
+    }
+
+    function buildCutsceneScene(animType) {
+      clearSceneMeshes();
+      state.scene.background = new THREE.Color(0x0a0612);
+      state.scene.fog = new THREE.FogExp2(0x0a0612, 0.012);
+      state.camera.position.set(0, 2.2, 14);
+      state.camera.lookAt(0, 0, 0);
+
+      const stageMap = { fertilization: 1, implantation: 2, lungs: 3, kidneys: 4, hormones: 5, birth: 6 };
+      const stage = stageMap[animType] || 1;
+
+      const embryo = createEmbryoModel(stage);
+      embryo.position.set(0, 0, 0);
+      embryo.scale.setScalar(stage <= 2 ? 1.2 : 1.0);
+      state.scene.add(embryo);
+      state.animObjects.push({ mesh: embryo, type: 'embryoGrow', stage });
+
+      if (animType === 'fertilization') {
+        const egg = new THREE.Mesh(
+          new THREE.SphereGeometry(2.8, 24, 24),
+          new THREE.MeshStandardMaterial({ color: 0xffe4ec, emissive: 0x331122, metalness: 0.4, roughness: 0.3, transparent: true, opacity: 0.55 })
+        );
+        state.scene.add(egg);
+        state.animObjects.push({ mesh: egg, type: 'eggFade' });
+        const winner = new THREE.Mesh(
+          new THREE.SphereGeometry(0.25, 8, 8),
+          new THREE.MeshStandardMaterial({ color: 0xffaacc, emissive: 0x441122 })
+        );
+        winner.position.set(0, 0, 8);
+        state.scene.add(winner);
+        state.animObjects.push({ mesh: winner, type: 'winnerSperm' });
+      } else if (animType === 'implantation') {
+        const wall = new THREE.Mesh(
+          new THREE.PlaneGeometry(22, 14),
+          new THREE.MeshStandardMaterial({ color: 0x5b2c3a, side: THREE.DoubleSide, roughness: 0.8 })
+        );
+        wall.position.z = -5;
+        state.scene.add(wall);
+        embryo.position.set(0, 1.5, 3);
+        state.animObjects.push({ mesh: embryo, type: 'blast' });
+      } else if (animType === 'lungs') {
+        for (let i = 0; i < 6; i++) {
+          const s = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3 + Math.random() * 0.35, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.6, emissive: 0x38bdf8, emissiveIntensity: 0.2 })
+          );
+          s.position.set((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4 - 2);
+          state.scene.add(s);
+          state.animObjects.push({ mesh: s, type: 'alveoli', phase: Math.random() * 6 });
+        }
+      } else if (animType === 'kidneys') {
+        for (let i = 0; i < 8; i++) {
+          const t = new THREE.Mesh(
+            new THREE.SphereGeometry(0.15, 5, 5),
+            new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x440000 })
+          );
+          t.position.set((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 4, 4);
+          state.scene.add(t);
+          state.animObjects.push({ mesh: t, type: 'toxinFloat' });
+        }
+      } else if (animType === 'hormones') {
+        const cols = [0xf472b6, 0x34d399, 0x60a5fa, 0xfbbf24];
+        for (let i = 0; i < 4; i++) {
+          const gl = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 10, 10),
+            new THREE.MeshStandardMaterial({ color: cols[i], emissive: cols[i], emissiveIntensity: 0.45 })
+          );
+          const a = (i / 4) * Math.PI * 2;
+          gl.position.set(Math.cos(a) * 4.5, Math.sin(a) * 2.2, -1);
+          state.scene.add(gl);
+          state.animObjects.push({ mesh: gl, type: 'glandPulse', phase: i });
+        }
+      } else if (animType === 'birth') {
+        embryo.position.set(0, -1.5, 2);
+        state.animObjects.push({ mesh: embryo, type: 'babyRise' });
+        const glow = new THREE.PointLight(0xfff0dd, 2.8, 35);
+        glow.position.set(0, 3, 0);
+        state.scene.add(glow);
+      }
+
+      const ambient = new THREE.PointLight(0xffaacc, 0.8, 40);
+      ambient.position.set(0, 4, 5);
+      state.scene.add(ambient);
+    }
+
+    function updateCutsceneAnim(t) {
+      state.animObjects.forEach(obj => {
+        const m = obj.mesh;
+        if (obj.type === 'winnerSperm') {
+          m.position.lerp(new THREE.Vector3(0, 0, 0), 0.02);
+          m.position.y += Math.sin(t * 5) * 0.01;
+          if (m.position.z < 1) m.scale.setScalar(Math.max(0.1, m.scale.x - 0.015));
+        } else if (obj.type === 'eggFade') {
+          m.rotation.y = t * 0.25;
+          if (m.material.opacity > 0.15) m.material.opacity -= 0.003;
+        } else if (obj.type === 'embryoGrow') {
+          m.rotation.y = t * 0.35;
+          const pulse = 1 + Math.sin(t * 2) * 0.04;
+          m.scale.setScalar((obj.stage <= 2 ? 1.2 : 1.0) * pulse);
+        } else if (obj.type === 'blast') {
+          m.position.y = THREE.MathUtils.lerp(m.position.y, -0.3, 0.012);
+          m.position.z = THREE.MathUtils.lerp(m.position.z, -3.2, 0.012);
+        } else if (obj.type === 'alveoli') {
+          m.position.y += Math.sin(t * 2.2 + obj.phase) * 0.01;
+          m.scale.setScalar(1 + Math.sin(t * 3.2 + obj.phase) * 0.1);
+        } else if (obj.type === 'toxinFloat') {
+          m.position.z -= 0.04;
+          if (m.position.z < -3) m.position.z = 5;
+          if (Math.abs(m.position.x) < 1.5 && m.position.z < 1) {
+            m.position.x *= 0.95;
+            m.scale.multiplyScalar(0.97);
+          }
+        } else if (obj.type === 'glandPulse') {
+          m.scale.setScalar(1 + Math.sin(t * 2.6 + obj.phase) * 0.14);
+        } else if (obj.type === 'babyRise') {
+          const progress = Math.min(1, t / 8);
+          const ease = 1 - Math.pow(1 - progress, 3);
+          m.position.y = THREE.MathUtils.lerp(-1.5, 1.6, ease);
+          m.position.z = THREE.MathUtils.lerp(2, 0.2, ease * 0.5);
+          m.rotation.y = t * 0.22;
+          m.rotation.x = Math.sin(t * 0.8) * 0.08;
+          const breath = 1 + Math.sin(t * 3.2) * 0.025 + (progress > 0.7 ? Math.sin(t * 8) * 0.015 : 0);
+          m.scale.setScalar(breath);
+          if (m.userData && m.userData.limbs) {
+            const L = m.userData.limbs;
+            if (L.armL) { L.armL.rotation.z = 0.55 + Math.sin(t * 2.2) * 0.35; L.armL.rotation.x = Math.sin(t * 1.8) * 0.2; }
+            if (L.armR) { L.armR.rotation.z = -0.55 - Math.sin(t * 2.4 + 1) * 0.35; L.armR.rotation.x = Math.sin(t * 1.9 + 0.5) * 0.2; }
+            if (L.legL) L.legL.rotation.x = Math.sin(t * 2.6) * 0.25;
+            if (L.legR) L.legR.rotation.x = Math.sin(t * 2.8 + 1.2) * 0.25;
+            if (L.head) { L.head.rotation.y = Math.sin(t * 1.1) * 0.15; L.head.rotation.z = Math.sin(t * 0.9) * 0.06; }
+            if (L.mouth && progress > 0.65) L.mouth.scale.y = 0.5 + Math.sin(t * 10) * 0.4;
+          }
+        }
+      });
+      state.camera.position.x = Math.sin(t * 0.22) * 3.2;
+      state.camera.position.y = 2.2 + Math.sin(t * 0.28) * 0.55;
+      state.camera.lookAt(0, 0, 0);
+    }
+
+    // ============================================================
+    // GAME FLOW + CHECKPOINT
+    // ============================================================
+    function startPhase(n) {
+      state.phase = n;
+      state.health = 100;
+      state.time = 0;
+      state.levelComplete = false;
+      state.damageCooldown = 0;
+      state.boostEnergy = 100;
+      state.isPlaying = false;
+      state.isPaused = false;
+      state.inCutscene = false;
+
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('cutscene').classList.add('hidden');
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('end-screen').classList.add('hidden');
+      document.getElementById('death-screen').classList.add('hidden');
+      document.getElementById('pause-screen').classList.add('hidden');
+      document.getElementById('level-screen').classList.remove('hidden');
+
+      const p = PHASES[n];
+      document.getElementById('level-week').textContent = p.week;
+      document.getElementById('level-title').textContent = `Fase ${n}: ${p.name}`;
+      document.getElementById('level-desc').textContent = p.desc;
+      document.getElementById('level-tips').innerHTML =
+        `<pre style="white-space:pre-wrap;font-family:inherit;color:#d4d4f0;margin:0;">${p.tips}</pre>` +
+        `<p style="margin-top:8px;color:#fbbf24;font-size:0.9rem;">Dificuldade: ${p.difficulty}</p>`;
+      document.getElementById('phase-name').textContent = p.name;
+      document.getElementById('objective').textContent = p.objective;
+      state.nutrientsCollected = 0;
+      state.toxinsCollected = 0;
+      state.goalUnlocked = false;
+      state.glandsDelivered = 0;
+      state.hormonesCarried = null;
+      if (n === 2) document.getElementById('extra-info').textContent = `Nutrientes: 0/${CONFIG.minNutrients}`;
+      else if (n === 4) document.getElementById('extra-info').textContent = `Toxinas: 0/${CONFIG.minToxins}`;
+      else if (n === 5) document.getElementById('extra-info').textContent = 'Entregues: 0/4';
+      else document.getElementById('extra-info').textContent = '';
+      updateBars();
+      updateScoreHUD();
+    }
+
+    function playLevel() {
+      document.getElementById('level-screen').classList.add('hidden');
+      document.getElementById('hud').classList.remove('hidden');
+      state.isPlaying = true;
+      state.isPaused = false;
+      state.clock.start();
+      AudioSys.resume();
+
+      switch (state.phase) {
+        case 1: buildSpermLevel(); break;
+        case 2: buildDigestiveLevel(); break;
+        case 3: buildRespiratoryLevel(); break;
+        case 4: buildExcretoryLevel(); break;
+        case 5: buildEndocrineLevel(); break;
+        case 6: buildBirthLevel(); break;
+      }
+    }
+
+    function showCutscene(afterPhase) {
+      // Checkpoint: salva progresso ao completar fase
+      SaveSystem.save(afterPhase + 1, state.score);
+
+      const cs = CUTSCENES[afterPhase];
+      if (!cs) {
+        if (afterPhase >= 6) gameOver(true);
+        else startPhase(afterPhase + 1);
+        return;
+      }
+      state.inCutscene = true;
+      state.isPlaying = false;
+      state.cutsceneTimer = 0;
+      state.cutsceneDuration = cs.duration;
+      state.cutsceneData = cs;
+
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('cutscene').classList.remove('hidden');
+      document.getElementById('cutscene-title').textContent = cs.title;
+      document.getElementById('cutscene-body').textContent = cs.body;
+      document.getElementById('cutscene-bar').style.width = '0%';
+
+      buildCutsceneScene(cs.anim);
+    }
+
+    function endCutscene() {
+      state.inCutscene = false;
+      document.getElementById('cutscene').classList.add('hidden');
+      const next = state.phase;
+      if (next >= 6) gameOver(true);
+      else startPhase(next + 1);
+    }
+
+    function showMessage(text, duration = 1400) {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.opacity = '0'; }, duration);
+    }
+
+    function updateBars() {
+      document.getElementById('health-bar').style.width = Math.max(0, state.health) + '%';
+      document.getElementById('boost-bar').style.width = Math.max(0, state.boostEnergy) + '%';
+    }
+
+    function updateScoreHUD() {
+      const el = document.getElementById('score-info');
+      if (state.score > 0) {
+        el.style.display = 'block';
+        el.textContent = `Score: ${state.score}`;
+      }
+    }
+
+    function flashDamage() {
+      const el = document.getElementById('damage-flash');
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.opacity = '0'; }, 180);
+    }
+
+    function takeDamage(amount) {
+      if (state.damageCooldown > 0 || state.isPaused) return;
+      state.health -= amount;
+      state.damageCooldown = CONFIG.damageCooldown;
+      updateBars();
+      flashDamage();
+      AudioSys.hit();
+      if (state.player) spawnHitParticles(state.player.position.clone(), 0xff5555);
+      showMessage(`−${Math.round(amount)} 💔`, 650);
+      if (state.health <= 0) {
+        state.isPlaying = false;
+        AudioSys.lose();
+        document.getElementById('death-screen').classList.remove('hidden');
+        document.getElementById('death-message').textContent =
+          `Fase ${state.phase} — tente de novo! Seu progresso está salvo.`;
+      }
+    }
+
+    function heal(amount) {
+      state.health = Math.min(100, state.health + amount);
+      updateBars();
+      AudioSys.heal();
+      showMessage(`+${amount} 💚`, 700);
+    }
+
+    function levelWin() {
+      if (state.levelComplete) return;
+      state.levelComplete = true;
+      state.isPlaying = false;
+      state.score += 100 + Math.max(0, 50 - Math.floor(state.time / 2));
+      updateScoreHUD();
+      AudioSys.win();
+      showMessage('FASE COMPLETA! 🎉', 1800);
+      setTimeout(() => showCutscene(state.phase), 2000);
+    }
+
+    function gameOver(won) {
+      state.isPlaying = false;
+      state.inCutscene = false;
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('cutscene').classList.add('hidden');
+      document.getElementById('end-screen').classList.remove('hidden');
+      if (won) {
+        SaveSystem.clear();
+        document.getElementById('end-title').textContent = '🍼 NASCIMENTO!';
+        document.getElementById('end-message').textContent =
+          'Você completou a jornada da vida: da fertilização ao nascimento. O corpo humano e a gestação são uma obra-prima da biologia. Parabéns!';
+        document.getElementById('end-score').textContent = `Score final: ${state.score}`;
+      } else {
+        document.getElementById('end-title').textContent = 'Fim da Jornada';
+        document.getElementById('end-message').textContent = 'A vida é frágil. Tente de novo e domine todos os sistemas!';
+        document.getElementById('end-score').textContent = '';
+      }
+    }
+
+    function togglePause() {
+      if (!state.isPlaying || state.inCutscene) return;
+      state.isPaused = !state.isPaused;
+      document.getElementById('pause-screen').classList.toggle('hidden', !state.isPaused);
+      if (!state.isPaused) state.clock.getDelta(); // discard paused time
+    }
+
+    // ============================================================
+    // IMPROVED COLLISIONS (sphere + AABB)
+    // ============================================================
+    function sphereHit(pPos, pR, oPos, oR) {
+      return pPos.distanceTo(oPos) < (pR + oR);
+    }
+
+    function aabbHit(pPos, pR, obs) {
+      // Player as sphere vs axis-aligned box
+      const hx = obs.userData.halfW;
+      const hy = obs.userData.halfH;
+      const hz = obs.userData.halfD;
+      const cx = obs.position.x, cy = obs.position.y, cz = obs.position.z;
+      const closestX = Math.max(cx - hx, Math.min(pPos.x, cx + hx));
+      const closestY = Math.max(cy - hy, Math.min(pPos.y, cy + hy));
+      const closestZ = Math.max(cz - hz, Math.min(pPos.z, cz + hz));
+      const dx = pPos.x - closestX;
+      const dy = pPos.y - closestY;
+      const dz = pPos.z - closestZ;
+      return (dx * dx + dy * dy + dz * dz) < (pR * pR);
+    }
+
+    function updateCarriedVisual() {
+      if (state.carriedMesh) {
+        if (state.carriedMesh.parent) state.carriedMesh.parent.remove(state.carriedMesh);
+        else state.scene.remove(state.carriedMesh);
+        state.carriedMesh = null;
+      }
+      if (state.hormonesCarried === null || !state.player) return;
+      const colors = [0xf472b6, 0x34d399, 0x60a5fa, 0xfbbf24];
+      const m = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.22),
+        new THREE.MeshStandardMaterial({
+          color: colors[state.hormonesCarried],
+          emissive: colors[state.hormonesCarried],
+          emissiveIntensity: 0.7,
+        })
+      );
+      m.position.set(0, 0.7, 0);
+      state.player.add(m);
+      state.carriedMesh = m;
+    }
+
+    function checkCollisions() {
+      if (!state.player) return;
+      const pPos = state.player.position;
+      const pR = state.playerRadius;
+
+      for (let i = state.obstacles.length - 1; i >= 0; i--) {
+        const obs = state.obstacles[i];
+        if (!obs.parent) continue;
+        const t = obs.userData.type;
+        let hit = false;
+
+        if (t === 'wall' || t === 'contraction') {
+          hit = aabbHit(pPos, pR, obs);
+        } else {
+          const oR = obs.userData.radius || 0.5;
+          hit = sphereHit(pPos, pR, obs.position, oR);
+        }
+
+        if (!hit) continue;
+
+        if (t === 'wbc') takeDamage(CONFIG.damage.wbc);
+        else if (t === 'acid') takeDamage(obs.userData.damage || CONFIG.damage.acid);
+        else if (t === 'enzyme') takeDamage(CONFIG.damage.enzyme);
+        else if (t === 'pollution') takeDamage(CONFIG.damage.pollution);
+        else if (t === 'mucus') {
+          takeDamage(CONFIG.damage.mucus);
+          state.player.userData.slow = 0.45;
+        } else if (t === 'protein') {
+          takeDamage(CONFIG.damage.protein);
+          state.scene.remove(obs);
+          state.obstacles.splice(i, 1);
+          showMessage('Proteína perdida!', 900);
+        } else if (t === 'wrongHormone') {
+          takeDamage(CONFIG.damage.wrongHormone);
+          state.scene.remove(obs);
+          state.obstacles.splice(i, 1);
+          if (state.hormonesCarried !== null) {
+            state.hormonesCarried = null;
+            updateCarriedVisual();
+            document.getElementById('extra-info').textContent = `Entregues: ${state.glandsDelivered}/4`;
+            showMessage('Hormônio perdido!', 800);
+          }
+        } else if (t === 'npcSperm') takeDamage(CONFIG.damage.npcSperm);
+        else if (t === 'wall') takeDamage(CONFIG.damage.wall);
+        else if (t === 'contraction') takeDamage(CONFIG.damage.contraction);
+      }
+
+      for (let i = state.collectibles.length - 1; i >= 0; i--) {
+        const col = state.collectibles[i];
+        if (!col.parent) continue;
+        const oR = col.userData.radius || 0.5;
+        if (!sphereHit(pPos, pR, col.position, oR)) continue;
+        const t = col.userData.type;
+
+        if (t === 'boost') {
+          state.boostEnergy = Math.min(100, state.boostEnergy + 48);
+          state.scene.remove(col);
+          state.collectibles.splice(i, 1);
+          AudioSys.collect();
+          showMessage('BOOST! ⚡', 700);
+          updateBars();
+        } else if (t === 'heal') {
+          if (state.phase === 2) {
+            state.nutrientsCollected++;
+            heal(15);
+            state.score += 5;
+            document.getElementById('extra-info').textContent =
+              `Nutrientes: ${state.nutrientsCollected}/${CONFIG.minNutrients}`;
+            if (state.nutrientsCollected >= CONFIG.minNutrients && !state.goalUnlocked) {
+              state.goalUnlocked = true;
+              AudioSys.unlock();
+              showMessage('Zona de absorção ABERTA! ✨', 1600);
+              if (state.goal) {
+                state.goal.traverse(c => {
+                  if (c.material && c.material.emissiveIntensity !== undefined) {
+                    c.material.emissiveIntensity = 0.85;
+                  }
+                });
+              }
+            } else {
+              showMessage(`Nutriente ${state.nutrientsCollected}/${CONFIG.minNutrients}`, 700);
+            }
+          } else {
+            heal(15);
+          }
+          state.scene.remove(col);
+          state.collectibles.splice(i, 1);
+        } else if (t === 'toxin') {
+          state.toxinsCollected++;
+          state.score += 10;
+          state.scene.remove(col);
+          state.collectibles.splice(i, 1);
+          AudioSys.collect();
+          document.getElementById('extra-info').textContent =
+            `Toxinas: ${state.toxinsCollected}/${CONFIG.minToxins}`;
+          updateScoreHUD();
+          if (state.phase === 4 && state.toxinsCollected >= CONFIG.minToxins && !state.goalUnlocked) {
+            state.goalUnlocked = true;
+            AudioSys.unlock();
+            showMessage('Portal de saída ABERTO! 🚪', 1600);
+          } else {
+            showMessage('+10 filtrada', 600);
+          }
+        } else if (t === 'hormonePickup') {
+          if (state.hormonesCarried !== null) {
+            showMessage('Já está carregando um!', 800);
+            continue;
+          }
+          state.hormonesCarried = col.userData.targetId;
+          state.scene.remove(col);
+          state.collectibles.splice(i, 1);
+          AudioSys.collect();
+          const names = ['Rosa', 'Verde', 'Azul', 'Amarelo'];
+          showMessage(`Hormônio ${names[col.userData.targetId]} coletado`, 900);
+          document.getElementById('extra-info').textContent =
+            `Carregando: ${names[col.userData.targetId]} | ${state.glandsDelivered}/4`;
+          updateCarriedVisual();
+        } else if (t === 'gland') {
+          if (state.hormonesCarried === null || col.userData.delivered) continue;
+
+          if (state.hormonesCarried === col.userData.id) {
+            col.userData.delivered = true;
+            if (col.material) col.material.emissiveIntensity = 1.0;
+            col.scale.setScalar(1.25);
+            state.glandsDelivered++;
+            state.hormonesCarried = null;
+            state.score += 25;
+            updateCarriedVisual();
+            updateScoreHUD();
+            AudioSys.deliver();
+            document.getElementById('extra-info').textContent = `Entregues: ${state.glandsDelivered}/4`;
+            showMessage(`${col.userData.name} ✓ (${state.glandsDelivered}/4)`, 1200);
+            spawnHitParticles(col.position.clone(), col.material?.color?.getHex?.() || 0xf472b6);
+            if (state.glandsDelivered >= 4) levelWin();
+          } else if (state.wrongGlandCooldown <= 0) {
+            state.wrongGlandCooldown = 1.2;
+            takeDamage(CONFIG.damage.wrongGland);
+            state.hormonesCarried = null;
+            updateCarriedVisual();
+            document.getElementById('extra-info').textContent = `Entregues: ${state.glandsDelivered}/4`;
+            showMessage('Glândula errada! Hormônio perdido', 1000);
+          }
+        }
+      }
+
+      if (state.goal && state.goal.position) {
+        const gR = (state.goal.userData && state.goal.userData.radius) || 3.5;
+        const gDist = pPos.distanceTo(state.goal.position);
+        if (state.phase === 1 && gDist < gR) levelWin();
+        else if (state.phase === 2 && gDist < gR) {
+          if (state.goalUnlocked) levelWin();
+          else if (state.damageCooldown <= 0) {
+            showMessage(`Colete ${CONFIG.minNutrients} nutrientes primeiro!`, 900);
+            state.damageCooldown = 1.5;
+          }
+        } else if (state.phase === 3 && gDist < gR) levelWin();
+        else if (state.phase === 4 && gDist < gR && pPos.z < -74) {
+          if (state.goalUnlocked) levelWin();
+          else if (state.damageCooldown <= 0) {
+            showMessage(`Filtre ${CONFIG.minToxins} toxinas primeiro!`, 900);
+            state.damageCooldown = 1.5;
+          }
+        } else if (state.phase === 6 && gDist < gR) levelWin();
+      }
+    }
+
+    // ============================================================
+    // UPDATE LOOP
+    // ============================================================
+    function updateBabyPlayerAnim(t) {
+      if (!state.player || !state.player.userData.limbs) return;
+      const L = state.player.userData.limbs;
+      if (L.armL) L.armL.rotation.z = 0.5 + Math.sin(t * 1.8) * 0.15;
+      if (L.armR) L.armR.rotation.z = -0.5 - Math.sin(t * 2.0) * 0.15;
+      if (L.legL) L.legL.rotation.x = Math.sin(t * 2.2) * 0.12;
+      if (L.legR) L.legR.rotation.x = Math.sin(t * 2.4 + 1) * 0.12;
+      if (L.head) L.head.rotation.y = Math.sin(t * 0.9) * 0.08;
+    }
+
+    function updateSpermTail(t, boosting) {
+      const segs = state.tailSegments;
+      if (!segs || !segs.length) return;
+      const amp = boosting ? 0.62 : 0.4;
+      const freq = boosting ? 20 : 13;
+      segs.forEach((seg, i) => {
+        const phase = t * freq - i * 0.48;
+        const falloff = 1 - i / segs.length * 0.25;
+        const wave = Math.sin(phase) * amp * falloff;
+        const wave2 = Math.sin(phase * 0.55 + 1.2) * amp * 0.35 * falloff;
+        const baseZ = 0.95 + i * 0.2 * 0.92;
+        seg.position.set(wave * 0.38, wave2 * 0.22, baseZ);
+        seg.rotation.z = wave * 0.55;
+        seg.rotation.y = wave2 * 0.35;
+      });
+      if (state.player.userData.head) {
+        state.player.userData.head.rotation.z = Math.sin(t * 3.2) * 0.05;
+        state.player.userData.head.rotation.x = Math.sin(t * 2.1) * 0.03;
+      }
+      if (state.player.userData.tip) {
+        state.player.userData.tip.rotation.z = Math.sin(t * 3.2) * 0.04;
+      }
+    }
+
+    function update(delta) {
+      if (state.inCutscene) {
+        state.cutsceneTimer += delta;
+        const pct = Math.min(100, (state.cutsceneTimer / state.cutsceneDuration) * 100);
+        document.getElementById('cutscene-bar').style.width = pct + '%';
+        updateCutsceneAnim(state.cutsceneTimer);
+        if (state.cutsceneTimer >= state.cutsceneDuration) endCutscene();
+        return;
+      }
+
+      if (!state.isPlaying || !state.player || state.isPaused) return;
+
+      state.time += delta;
+      document.getElementById('timer').textContent = `Tempo: ${Math.floor(state.time)}s`;
+      if (state.damageCooldown > 0) state.damageCooldown -= delta;
+      if (state.wrongGlandCooldown > 0) state.wrongGlandCooldown -= delta;
+
+      // NPCs espermatozoides
+      if (state.phase === 1 && state.npcSperms.length && state.goal) {
+        const eggZ = state.goal.position.z;
+        state.npcSperms.forEach(npc => {
+          if (!npc.parent || npc.userData.failed) return;
+          npc.position.z -= npc.userData.speed * delta;
+          npc.position.x += Math.sin(state.time * 3 + npc.userData.wobble) * 0.015;
+          npc.position.y += Math.cos(state.time * 2.5 + npc.userData.wobble) * 0.012;
+          npc.rotation.z = Math.sin(state.time * 8 + npc.userData.wobble) * 0.2;
+          if (npc.position.z < eggZ + 5.5) {
+            npc.userData.failed = true;
+            npc.traverse(c => {
+              if (c.material) {
+                c.material.transparent = true;
+                c.material.opacity = 0.25;
+                c.material.color?.setHex?.(0x666688);
+              }
+            });
+            npc.position.x += (npc.position.x >= 0 ? 1 : -1) * 2.5;
+            spawnHitParticles(npc.position.clone(), 0xffaacc);
+          }
+        });
+      }
+
+      if (state.carriedMesh) {
+        state.carriedMesh.rotation.y += delta * 4;
+        state.carriedMesh.rotation.x += delta * 2;
+      }
+
+      const baseSpeed = state.phase === 6 ? 4.3 : 5.9;
+      const slow = state.player.userData.slow || 1;
+      state.player.userData.slow = Math.max(1, (state.player.userData.slow || 1) - delta * 0.6);
+
+      // Input: teclado + joystick
+      let mx = 0, mz = 0;
+      if (state.keys['KeyW'] || state.keys['ArrowUp']) mz = -1;
+      if (state.keys['KeyS'] || state.keys['ArrowDown']) mz = 1;
+      if (state.keys['KeyA'] || state.keys['ArrowLeft']) mx = -1;
+      if (state.keys['KeyD'] || state.keys['ArrowRight']) mx = 1;
+
+      // Joystick sobrescreve / combina
+      if (state.joy.active) {
+        mx = state.joy.x;
+        mz = state.joy.y;
+      }
+
+      let boost = 1;
+      const boosting = (state.keys['Space'] || state.mobileBoost) && state.boostEnergy > 0;
+      if (boosting) {
+        boost = 2.2;
+        state.boostEnergy = Math.max(0, state.boostEnergy - CONFIG.boostCost * delta);
+        state.boostTrailTimer -= delta;
+        if (state.boostTrailTimer <= 0) {
+          spawnBoostTrail();
+          state.boostTrailTimer = 0.05;
+          if (Math.random() > 0.7) AudioSys.boost();
+        }
+      } else {
+        state.boostEnergy = Math.min(100, state.boostEnergy + CONFIG.boostRegen * delta);
+        state.boostTrailTimer = 0;
+      }
+      updateBars();
+
+      if (state.phase === 4 || state.phase === 5) {
+        state.player.position.x += mx * baseSpeed * boost * delta * 2.9 * slow;
+        state.player.position.z += mz * baseSpeed * boost * delta * 2.9 * slow;
+        let dy = 0;
+        if (state.keys['KeyQ']) dy = 2.6;
+        if (state.keys['KeyE']) dy = -2.6;
+        // Joystick vertical também sobe/desce em arenas
+        if (state.joy.active && Math.abs(state.joy.y) > 0.3 && state.phase === 4) {
+          // na fase 4 o Y do joystick controla Z; Q/E para altura
+        }
+        state.player.position.y = Math.max(0.5, Math.min(4.2, state.player.position.y + dy * delta));
+      } else {
+        state.player.position.z -= baseSpeed * boost * delta * slow;
+        state.player.position.x += mx * 5.4 * delta * boost;
+        if (state.keys['KeyW'] || state.keys['ArrowUp'] || (state.joy.active && state.joy.y < -0.3))
+          state.player.position.y += 2.8 * delta * boost;
+        if (state.keys['KeyS'] || state.keys['ArrowDown'] || (state.joy.active && state.joy.y > 0.3))
+          state.player.position.y -= 2.8 * delta * boost;
+        // No túnel, joystick Y também ajusta altura quando |y| alto
+        if (state.joy.active) {
+          state.player.position.y -= state.joy.y * 2.0 * delta * boost;
+        }
+        const maxR = state.phase === 6 ? 2.05 : 3.7;
+        const r = Math.sqrt(state.player.position.x ** 2 + state.player.position.y ** 2);
+        if (r > maxR) {
+          state.player.position.x *= maxR / r;
+          state.player.position.y *= maxR / r;
+        }
+      }
+
+      if (state.phase === 1 && state.tailSegments.length) updateSpermTail(state.time, boosting);
+      if (state.phase === 6) updateBabyPlayerAnim(state.time);
+
+      if (state.player.userData.spin) {
+        state.player.rotation.y += delta * 2.5;
+        state.player.rotation.x += delta * 1.2;
+      }
+      if (state.player.userData.shell) {
+        state.player.userData.shell.rotation.y += delta * 1.8;
+        state.player.userData.shell.rotation.x += delta * 0.9;
+      }
+      if (state.player.userData.aura) {
+        const s = 1 + Math.sin(state.time * 4) * 0.12;
+        state.player.userData.aura.scale.setScalar(s);
+      }
+      if (state.player.userData.glow) {
+        state.player.userData.glow.intensity = 0.5 + Math.sin(state.time * 5) * 0.2 + (boosting ? 0.4 : 0);
+      }
+
+      state.player.rotation.z = THREE.MathUtils.lerp(state.player.rotation.z, -mx * 0.32, 0.15);
+
+      // Camera
+      if (state.phase === 4 || state.phase === 5) {
+        state.camera.position.lerp(
+          new THREE.Vector3(state.player.position.x * 0.3, state.player.position.y + 8, state.player.position.z + 12),
+          0.08
+        );
+        state.camera.lookAt(state.player.position.x, state.player.position.y, state.player.position.z - 5);
+      } else {
+        state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, state.player.position.x * 0.5, 0.12);
+        state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, state.player.position.y + 2.7, 0.12);
+        state.camera.position.z = state.player.position.z + 9.8;
+        state.camera.lookAt(state.player.position.x, state.player.position.y, state.player.position.z - 5);
+      }
+
+      // Obstacles AI
+      state.obstacles.forEach(obs => {
+        const t = obs.userData.type;
+        if (t === 'wbc') {
+          const dir = new THREE.Vector3().subVectors(state.player.position, obs.position).normalize();
+          obs.position.addScaledVector(dir, obs.userData.speed);
+          obs.position.y += Math.sin(state.time * 3 + obs.userData.wobble) * 0.015;
+          obs.scale.setScalar(1 + Math.sin(state.time * 4 + obs.userData.wobble) * 0.06);
+        } else if (t === 'enzyme') {
+          obs.rotation.x += obs.userData.rotSpeed;
+          obs.rotation.y += obs.userData.rotSpeed * 0.75;
+        } else if (t === 'pollution') {
+          obs.position.add(obs.userData.drift);
+          obs.rotation.y += 0.025;
+        } else if (t === 'wall') {
+          obs.position.x += obs.userData.dir * obs.userData.speed;
+          if (Math.abs(obs.position.x) > 12) obs.userData.dir *= -1;
+        } else if (t === 'contraction') {
+          const pulse = Math.sin(state.time * 1.75 + obs.userData.phase) * 1.15;
+          obs.position.x = obs.userData.baseX + (obs.userData.side === 'left' ? pulse : -pulse);
+        } else if (t === 'acid' || t === 'mucus') {
+          const pulse = 1 + Math.sin(state.time * 2.5 + (obs.userData.pulse || 0)) * 0.09;
+          obs.scale.setScalar(pulse);
+        } else if (t === 'ambientDrift') {
+          obs.position.addScaledVector(obs.userData.vel, delta);
+          if (state.player && obs.position.z > state.player.position.z + 15) {
+            obs.position.z = state.player.position.z - 70 - Math.random() * 30;
+            obs.position.x = (Math.random() - 0.5) * 7;
+            obs.position.y = (Math.random() - 0.5) * 7;
+          }
+        }
+        if (obs.userData.spin) {
+          obs.rotation.y += 0.04;
+          obs.rotation.x += 0.02;
+        }
+      });
+
+      if (state.phase === 1 && state.goal && state.goal.children) {
+        state.goal.children.forEach(c => {
+          if (c.userData && c.userData.spinSpeed) c.rotation.z += c.userData.spinSpeed * delta;
+        });
+      }
+
+      state.collectibles.forEach(c => {
+        if (['heal', 'toxin', 'hormonePickup', 'boost'].includes(c.userData.type)) {
+          c.position.y += Math.sin(state.time * 3.2 + (c.userData.bob || c.position.x)) * 0.01;
+          c.rotation.y += 0.03;
+          if (c.userData.type === 'boost') c.rotation.x += 0.04;
+        }
+      });
+
+      ParticlePool.update(delta, state.scene);
+      checkCollisions();
+
+      // Pressão passiva mais tardia e mais leve
+      if (state.phase === 4 && state.time > CONFIG.passiveDamageStart) {
+        takeDamage(CONFIG.passiveDamageRate * delta);
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = Math.min(state.clock.getDelta(), 0.05);
+      update(delta);
+      state.renderer.render(state.scene, state.camera);
+    }
+
+    // ============================================================
+    // INPUT — Keyboard + Virtual Joystick
+    // ============================================================
+    window.addEventListener('keydown', e => {
+      state.keys[e.code] = true;
+      if (e.code === 'Space') e.preventDefault();
+      if (e.code === 'Escape' || e.code === 'KeyP') {
+        e.preventDefault();
+        togglePause();
+      }
+    });
+    window.addEventListener('keyup', e => { state.keys[e.code] = false; });
+
+    // Virtual Joystick
+    (function setupJoystick() {
+      const zone = document.getElementById('joystick-zone');
+      const knob = document.getElementById('joystick-knob');
+      const base = document.getElementById('joystick-base');
+      const maxDist = 48;
+      let dragging = false;
+      let originX = 0, originY = 0;
+
+      function setKnob(dx, dy) {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const clamped = Math.min(dist, maxDist);
+        const angle = Math.atan2(dy, dx);
+        const kx = Math.cos(angle) * clamped;
+        const ky = Math.sin(angle) * clamped;
+        knob.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+        state.joy.x = clamped > 8 ? kx / maxDist : 0;
+        state.joy.y = clamped > 8 ? ky / maxDist : 0;
+        state.joy.active = clamped > 8;
+      }
+
+      function onStart(clientX, clientY) {
+        dragging = true;
+        const rect = base.getBoundingClientRect();
+        originX = rect.left + rect.width / 2;
+        originY = rect.top + rect.height / 2;
+        setKnob(clientX - originX, clientY - originY);
+      }
+
+      function onMove(clientX, clientY) {
+        if (!dragging) return;
+        setKnob(clientX - originX, clientY - originY);
+      }
+
+      function onEnd() {
+        dragging = false;
+        knob.style.transform = 'translate(-50%, -50%)';
+        state.joy.x = 0;
+        state.joy.y = 0;
+        state.joy.active = false;
+      }
+
+      zone.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY);
+      }, { passive: false });
+      zone.addEventListener('touchmove', e => {
+        e.preventDefault();
+        const t = e.touches[0];
+        onMove(t.clientX, t.clientY);
+      }, { passive: false });
+      zone.addEventListener('touchend', onEnd);
+      zone.addEventListener('touchcancel', onEnd);
+
+      // Mouse support for testing
+      zone.addEventListener('mousedown', e => { e.preventDefault(); onStart(e.clientX, e.clientY); });
+      window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+      window.addEventListener('mouseup', onEnd);
+    })();
+
+    // Boost button
+    const boostBtn = document.getElementById('btn-boost');
+    ['touchstart', 'mousedown'].forEach(ev => {
+      boostBtn.addEventListener(ev, e => {
+        e.preventDefault();
+        state.mobileBoost = true;
+        boostBtn.classList.add('active');
+      });
+    });
+    ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(ev => {
+      boostBtn.addEventListener(ev, () => {
+        state.mobileBoost = false;
+        boostBtn.classList.remove('active');
+      });
+    });
+
+    document.getElementById('btn-pause-mobile').addEventListener('click', () => togglePause());
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        AudioSys.click();
+      });
+    });
+
+    // Graphics mode
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.graphicsMode = btn.dataset.mode;
+        document.getElementById('mode-hint').textContent =
+          state.graphicsMode === '8bit'
+            ? 'Modo 8-bit: visual pixelado, low-poly e cores chapadas (estilo retrô)'
+            : 'Modo Realista: modelos detalhados e animações cinematográficas';
+        applyGraphicsMode();
+        AudioSys.click();
+      });
+    });
+
+    // Buttons
+    document.getElementById('btn-start').addEventListener('click', () => {
+      AudioSys.resume();
+      AudioSys.click();
+      applyGraphicsMode();
+      state.score = 0;
+      SaveSystem.clear();
+      startPhase(1);
+    });
+
+    document.getElementById('btn-continue').addEventListener('click', () => {
+      AudioSys.resume();
+      AudioSys.click();
+      const save = SaveSystem.load();
+      if (save) {
+        state.score = save.score || 0;
+        if (save.graphicsMode) {
+          state.graphicsMode = save.graphicsMode;
+          document.querySelectorAll('.mode-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.mode === state.graphicsMode);
+          });
+        }
+        applyGraphicsMode();
+        startPhase(Math.min(6, save.phase));
+      }
+    });
+
+    document.getElementById('btn-play-level').addEventListener('click', () => {
+      AudioSys.click();
+      playLevel();
+    });
+    document.getElementById('btn-skip-cutscene').addEventListener('click', () => {
+      AudioSys.click();
+      endCutscene();
+    });
+    document.getElementById('btn-restart').addEventListener('click', () => {
+      AudioSys.click();
+      document.getElementById('end-screen').classList.add('hidden');
+      state.score = 0;
+      SaveSystem.clear();
+      startPhase(1);
+    });
+    document.getElementById('btn-retry').addEventListener('click', () => {
+      AudioSys.click();
+      document.getElementById('death-screen').classList.add('hidden');
+      startPhase(state.phase);
+    });
+    document.getElementById('btn-death-menu').addEventListener('click', () => {
+      AudioSys.click();
+      document.getElementById('death-screen').classList.add('hidden');
+      document.getElementById('start-screen').classList.remove('hidden');
+      refreshContinueUI();
+    });
+    document.getElementById('btn-resume').addEventListener('click', () => {
+      AudioSys.click();
+      togglePause();
+    });
+    document.getElementById('btn-quit-menu').addEventListener('click', () => {
+      AudioSys.click();
+      state.isPlaying = false;
+      state.isPaused = false;
+      document.getElementById('pause-screen').classList.add('hidden');
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('start-screen').classList.remove('hidden');
+      // Salva fase atual para continuar depois
+      SaveSystem.save(state.phase, state.score);
+      refreshContinueUI();
+    });
+
+    function refreshContinueUI() {
+      const area = document.getElementById('continue-area');
+      if (SaveSystem.hasSave()) {
+        const s = SaveSystem.load();
+        area.classList.remove('hidden');
+        document.getElementById('save-info').textContent =
+          `Progresso salvo: Fase ${s.phase} — Score ${s.score || 0}`;
+      } else {
+        area.classList.add('hidden');
+      }
+    }
+
+    // ============================================================
+    // BOOT
+    // ============================================================
+    AudioSys.init();
+    initThree();
+    applyGraphicsMode();
+    refreshContinueUI();
+    animate();
+  </script>
 </body>
 </html>
